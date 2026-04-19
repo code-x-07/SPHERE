@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, CameraOff, CheckCircle2, XCircle, Loader2, Hash } from 'lucide-react';
+import { Camera, CameraOff, CheckCircle2, XCircle, Hash } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 

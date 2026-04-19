@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { motion, useMotionValue, useTransform, useSpring, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { motion, useMotionValue } from 'framer-motion';
 import { Calendar, MapPin, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Event } from '../../lib/supabase';
 
@@ -17,15 +17,10 @@ const CARD_IMAGES = [
 
 export default function HeroSlider3D({ events }: HeroSlider3DProps) {
   const [active, setActive] = useState(0);
-  const [dragging, setDragging] = useState(false);
   const dragX = useMotionValue(0);
-  const dragStartX = useRef(0);
 
   const items = events.length > 0 ? events : DEMO_EVENTS;
   const total = items.length;
-
-  const prev = (active - 1 + total) % total;
-  const next = (active + 1) % total;
 
   function goNext() {
     setActive((a) => (a + 1) % total);
@@ -39,7 +34,6 @@ export default function HeroSlider3D({ events }: HeroSlider3DProps) {
     if (val < -60) goNext();
     else if (val > 60) goPrev();
     dragX.set(0);
-    setDragging(false);
   }
 
   const getCardStyle = (index: number) => {
@@ -86,10 +80,6 @@ export default function HeroSlider3D({ events }: HeroSlider3DProps) {
               drag={style.zIndex === 10 ? 'x' : false}
               dragConstraints={{ left: -200, right: 200 }}
               dragElastic={0.15}
-              onDragStart={(_, info) => {
-                dragStartX.current = info.point.x;
-                setDragging(true);
-              }}
               onDragEnd={handleDragEnd}
               onDrag={(_, info) => dragX.set(info.offset.x)}
             >

@@ -11,7 +11,7 @@ export default function NavBar({ currentPage, onNavigate }: NavBarProps) {
   const { profile, signOut } = useAuthStore();
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['student', 'admin'] },
+    { id: 'discovery', label: 'Discovery', icon: LayoutDashboard, roles: ['student', 'admin'] },
     { id: 'scanner', label: 'Scanner', icon: QrCode, roles: ['operator', 'admin'] },
     { id: 'volunteer', label: 'Volunteer', icon: Users, roles: ['student', 'admin'] },
   ];
@@ -33,7 +33,7 @@ export default function NavBar({ currentPage, onNavigate }: NavBarProps) {
       }}
     >
       <button
-        onClick={() => onNavigate('dashboard')}
+        onClick={() => onNavigate('discovery')}
         className="flex items-center gap-2.5 group"
       >
         <div

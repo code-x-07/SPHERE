@@ -12,7 +12,7 @@ interface RoomFallbackCarouselProps {
 }
 
 export default function RoomFallbackCarousel({
-  rooms, date, timeSlot, onBook,
+  rooms, date: _date, timeSlot: _timeSlot, onBook,
 }: RoomFallbackCarouselProps) {
   const [idx, setIdx] = useState(0);
   const [booked, setBooked] = useState<string | null>(null);

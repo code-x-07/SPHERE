@@ -50,12 +50,12 @@ function LoadingScreen() {
 export default function App() {
   const { profile, loading, initialized, setLoading, fetchProfile } = useAuthStore();
   const { syncTime } = useTimeStore();
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState('discovery');
 
   useEffect(() => {
     syncTime();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       (async () => {
         if (session?.user) {
           await fetchProfile(session.user.id);
@@ -83,7 +83,7 @@ export default function App() {
       if (profile.role === 'operator') {
         setCurrentPage('scanner');
       } else {
-        setCurrentPage('dashboard');
+        setCurrentPage('discovery');
       }
     }
   }, [profile?.id]);
@@ -97,7 +97,7 @@ export default function App() {
   const renderPage = () => {
     if (!profile) return <Login />;
     switch (currentPage) {
-      case 'dashboard': return <Dashboard />;
+      case 'discovery': return <Dashboard />;
       case 'scanner': return <Scanner />;
       case 'volunteer': return <VolunteerPage />;
       default: return <Dashboard />;

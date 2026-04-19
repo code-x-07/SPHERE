@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -133,7 +133,7 @@ export default function ChatBot() {
         date: intent.date,
         time_slot: intent.time_slot,
         purpose: 'Booked via chatbot',
-        status: 'confirmed',
+        status: 'pending',
       });
 
       if (error) {
@@ -169,9 +169,9 @@ export default function ChatBot() {
       } else {
         addMessage({
           role: 'bot',
-          content: `Done! I've booked **${roomData.name}** for you on **${intent.date}** at **${intent.time_slot}**. You'll find the confirmation in your bookings.`,
+          content: `Done! I've submitted **${roomData.name}** for **${intent.date}** at **${intent.time_slot}**. You'll find the request in your bookings.`,
         });
-        addToast({ type: 'success', title: 'Room Booked!', message: `${roomData.name} on ${intent.date}` });
+        addToast({ type: 'success', title: 'Request Submitted', message: `${roomData.name} on ${intent.date}` });
         setPendingIntent(null);
       }
     } catch {
@@ -188,11 +188,11 @@ export default function ChatBot() {
       date: pendingIntent.date,
       time_slot: pendingIntent.time_slot,
       purpose: 'Booked via chatbot fallback',
-      status: 'confirmed',
+      status: 'pending',
     });
     if (!error) {
-      addMessage({ role: 'bot', content: `Booked **${room.name}** on **${pendingIntent.date}** at **${pendingIntent.time_slot}**.` });
-      addToast({ type: 'success', title: 'Room Booked!', message: `${room.name} secured` });
+      addMessage({ role: 'bot', content: `Submitted **${room.name}** on **${pendingIntent.date}** at **${pendingIntent.time_slot}** for approval.` });
+      addToast({ type: 'success', title: 'Request Submitted', message: `${room.name} secured` });
     }
   }
 

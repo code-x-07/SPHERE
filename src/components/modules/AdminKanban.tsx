@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, Clock, User, Mail, Briefcase } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToastStore } from '../../store/useToastStore';
 import type { VolunteerApplication } from '../../lib/supabase';

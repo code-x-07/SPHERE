@@ -46,7 +46,7 @@ export interface Booking {
   date: string;
   time_slot: string;
   purpose: string;
-  status: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   created_at: string;
 }
 
