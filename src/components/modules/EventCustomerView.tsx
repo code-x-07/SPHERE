@@ -73,16 +73,42 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
 
     const { data, error } = await supabase
       .from('event_tickets')
-      .select('id, event_id, user_id, ticket_hash, status, created_at, scanned_at, events(title, venue, event_date)')
+      .select('id, event_id, user_id, ticket_hash, status, created_at, scanned_at')
       .eq('user_id', profile.id)
       .order('created_at', { ascending: false });
 
     if (error) {
       addToast({ type: 'error', title: 'Wallet Load Failed', message: error.message });
     } else {
-      const normalized = ((data || []) as Array<EventTicket & { events?: EventTicket['events'][] }>).map((ticket) => ({
+      const tickets = (data || []) as EventTicket[];
+      const eventIds = Array.from(new Set(tickets.map((ticket) => ticket.event_id)));
+      let eventMap = new Map<string, NonNullable<EventTicket['events']>>();
+
+      if (eventIds.length > 0) {
+        const { data: eventRows, error: eventError } = await supabase
+          .from('events')
+          .select('id, title, venue, event_date')
+          .in('id', eventIds);
+
+        if (eventError) {
+          addToast({ type: 'warning', title: 'Wallet Events Missing', message: eventError.message });
+        } else {
+          eventMap = new Map(
+            (eventRows || []).map((event) => [
+              event.id,
+              {
+                title: event.title,
+                venue: event.venue,
+                event_date: event.event_date,
+              },
+            ])
+          );
+        }
+      }
+
+      const normalized = tickets.map((ticket) => ({
         ...ticket,
-        events: Array.isArray(ticket.events) ? ticket.events[0] || null : ticket.events || null,
+        events: eventMap.get(ticket.event_id) || null,
         qr_payload: buildTicketQrPayload(ticket.event_id, ticket.ticket_hash),
       }));
       setWallet(normalized);

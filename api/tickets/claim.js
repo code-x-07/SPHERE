@@ -37,7 +37,7 @@ export default async function handler(req, res) {
 
     const { data: ticketRows, error: ticketError } = await supabase
       .from('event_tickets')
-      .select('id, event_id, user_id, ticket_hash, status, created_at, scanned_at, events(title, venue, event_date)')
+      .select('id, event_id, user_id, ticket_hash, status, created_at, scanned_at')
       .eq('event_id', eventId)
       .eq('user_id', authData.user.id)
       .limit(1);
@@ -47,7 +47,17 @@ export default async function handler(req, res) {
     }
 
     const rawTicket = ticketRows[0];
-    const eventDetails = Array.isArray(rawTicket.events) ? rawTicket.events[0] || null : rawTicket.events || null;
+    const { data: eventRow, error: eventError } = await supabase
+      .from('events')
+      .select('title, venue, event_date')
+      .eq('id', rawTicket.event_id)
+      .maybeSingle();
+
+    if (eventError) {
+      return sendJson(res, 500, { error: eventError.message });
+    }
+
+    const eventDetails = eventRow || null;
     const qrPayload = buildTicketQrPayload(rawTicket.event_id, rawTicket.ticket_hash);
 
     await redisSetJson(
