@@ -153,18 +153,20 @@ export default function RoomBookingDiscovery() {
 
   return (
     <div className="space-y-6">
-      <GlassCard>
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <p className="text-white text-2xl font-bold" style={{ letterSpacing: '-0.03em' }}>
-              Sphere Room Booking
-            </p>
-            <p className="text-white/45 text-sm mt-2">
-              Browse rooms, submit booking requests, track approvals, and manage them here.
-            </p>
+      <GlassCard className="overflow-hidden">
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
+          <div className="space-y-4">
+            <span className="premium-label">Spatial room layer</span>
+            <div>
+              <p className="text-white text-4xl font-bold">Book campus rooms as a guided journey.</p>
+              <p className="text-white/52 text-sm md:text-base mt-4 max-w-2xl leading-7">
+                Browse room inventory, pivot into availability, then transition into approvals and booking memory
+                without falling back into plain utilities.
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3 justify-start lg:justify-end">
             {availableTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -176,11 +178,13 @@ export default function RoomBookingDiscovery() {
                     setSelectedRoom(null);
                     setActiveTab(tab.id);
                   }}
-                  className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold"
+                  className="inline-flex items-center gap-2 rounded-[18px] px-4 py-3 text-sm font-semibold"
                   style={{
-                    background: isActive ? 'rgba(14,165,233,0.16)' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${isActive ? 'rgba(14,165,233,0.28)' : 'rgba(255,255,255,0.08)'}`,
-                    color: isActive ? '#7dd3fc' : 'rgba(255,255,255,0.72)',
+                    background: isActive
+                      ? 'linear-gradient(135deg, rgba(103,232,249,0.16), rgba(37,99,235,0.18))'
+                      : 'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03))',
+                    border: `1px solid ${isActive ? 'rgba(103,232,249,0.24)' : 'rgba(255,255,255,0.08)'}`,
+                    color: isActive ? '#a5f3fc' : 'rgba(255,255,255,0.72)',
                   }}
                 >
                   <Icon size={14} />

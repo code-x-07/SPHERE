@@ -1,20 +1,18 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarDays, Orbit, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useAuthStore } from '../store/useAuthStore';
 import GlassCard from '../components/ui/GlassCard';
 import DiscoveryModeSelector from '../components/modules/DiscoveryModeSelector';
 import RoomBookingDiscovery from '../components/modules/RoomBookingDiscovery';
 import type { Event } from '../lib/supabase';
 import EventBookingDiscovery from '../components/modules/EventBookingDiscovery';
+import HeroImmersive from '../components/hero/HeroImmersive';
 
 interface DashboardProps {
   onOpenScanner: () => void;
 }
 
 export default function Dashboard({ onOpenScanner }: DashboardProps) {
-  const { profile } = useAuthStore();
   const [events, setEvents] = useState<Event[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [discoveryMode, setDiscoveryMode] = useState<'events' | 'rooms' | null>(() => {
@@ -70,72 +68,13 @@ export default function Dashboard({ onOpenScanner }: DashboardProps) {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mb-8"
         >
-          <GlassCard className="overflow-hidden md:p-8" glow glowColor="rgba(103,232,249,0.18)">
-            <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className="space-y-5">
-                <span className="premium-label">
-                  <Sparkles size={12} />
-                  Sphere Discovery Layer
-                </span>
-                <div>
-                  <p className="text-white/35 text-sm font-medium mb-2">Welcome back</p>
-                  <h1 className="text-white text-4xl md:text-5xl font-bold">
-                    {profile?.full_name || profile?.email?.split('@')[0] || 'Student'}
-                  </h1>
-                  <p className="text-white/55 text-sm md:text-base mt-4 max-w-2xl leading-relaxed">
-                    A premium campus control surface for events, rooms, operators, and volunteer flows.
-                    Start with a booking path, then move through a focused workspace instead of generic cards.
-                  </p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="premium-stat p-4">
-                    <p className="text-white/30 text-[11px] uppercase tracking-[0.24em]">Upcoming Events</p>
-                    <p className="text-white text-3xl font-bold mt-3">{events.length}</p>
-                  </div>
-                  <div className="premium-stat p-4">
-                    <p className="text-white/30 text-[11px] uppercase tracking-[0.24em]">Next Checkpoint</p>
-                    <p className="text-white text-lg font-semibold mt-3">{nextEvent ? 'Live Soon' : 'Idle'}</p>
-                    <p className="text-white/45 text-xs mt-1">{nextEvent ? nextEvent.title : 'Create or join an event to begin'}</p>
-                  </div>
-                  <div className="premium-stat p-4">
-                    <p className="text-white/30 text-[11px] uppercase tracking-[0.24em]">Mode Memory</p>
-                    <p className="text-white text-lg font-semibold mt-3">{discoveryMode ? discoveryMode.toUpperCase() : 'NONE'}</p>
-                    <p className="text-white/45 text-xs mt-1">Your last workspace reopens automatically.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-4 content-start">
-                <div className="premium-stat p-5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10">
-                      <Orbit size={18} className="text-cyan-200" />
-                    </div>
-                    <div>
-                      <p className="text-white text-lg font-semibold">Command Hub</p>
-                      <p className="text-white/40 text-sm">Discovery stays ambient while each workspace becomes focused.</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="premium-stat p-5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-300/10">
-                      <CalendarDays size={18} className="text-amber-200" />
-                    </div>
-                    <div>
-                      <p className="text-white text-lg font-semibold">Next Event Pulse</p>
-                      <p className="text-white/45 text-sm mt-1">
-                        {nextEvent
-                          ? `${nextEvent.title} at ${nextEvent.venue}`
-                          : 'No live event pulse yet. Create one from the admin workspace.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </GlassCard>
+          <HeroImmersive
+            eventCount={events.length}
+            activeMode={discoveryMode}
+            nextEventTitle={nextEvent?.title}
+            onEnterEvents={() => setDiscoveryMode('events')}
+            onEnterRooms={() => setDiscoveryMode('rooms')}
+          />
         </motion.div>
 
         <div className="mb-8">
