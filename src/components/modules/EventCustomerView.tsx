@@ -17,6 +17,32 @@ interface EventCustomerViewProps {
   onRefresh: () => Promise<void>;
 }
 
+function getWalletCacheKey(userId: string) {
+  return `sphere-event-wallet:${userId}`;
+}
+
+function readCachedWallet(userId: string): EventTicket[] {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const raw = window.localStorage.getItem(getWalletCacheKey(userId));
+    if (!raw) return [];
+    return JSON.parse(raw) as EventTicket[];
+  } catch {
+    return [];
+  }
+}
+
+function writeCachedWallet(userId: string, tickets: EventTicket[]) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.setItem(getWalletCacheKey(userId), JSON.stringify(tickets));
+  } catch {
+    // Ignore storage quota and private mode errors.
+  }
+}
+
 export default function EventCustomerView({ events, loading, onRefresh }: EventCustomerViewProps) {
   const { profile } = useAuthStore();
   const { addToast } = useToastStore();
@@ -27,8 +53,16 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile) {
+    if (profile?.id) {
+      const cached = readCachedWallet(profile.id);
+      if (cached.length > 0) {
+        setWallet(cached);
+        setWalletLoading(false);
+      }
       void fetchWallet();
+    } else {
+      setWallet([]);
+      setWalletLoading(false);
     }
   }, [profile?.id]);
 
@@ -92,6 +126,12 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
     };
   }, [wallet]);
 
+  useEffect(() => {
+    if (profile?.id) {
+      writeCachedWallet(profile.id, wallet);
+    }
+  }, [profile?.id, wallet]);
+
   async function fetchWallet() {
     if (!profile) return;
 
@@ -138,6 +178,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
         qr_payload: buildTicketQrPayload(ticket.event_id, ticket.ticket_hash),
       }));
       setWallet(normalized);
+      writeCachedWallet(profile.id, normalized);
     }
 
     setWalletLoading(false);
@@ -360,12 +401,20 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                 </div>
                 <MagneticButton
                   size="sm"
-                  disabled={Boolean(claim) || soldOut || claimingEventId === event.id}
+                  disabled={walletLoading || Boolean(claim) || soldOut || claimingEventId === event.id}
                   onClick={() => handleClaim(event.id)}
                 >
                   <span className="flex items-center gap-2">
                     <QrCode size={14} />
-                    {claimingEventId === event.id ? 'Claiming...' : claim ? 'Claimed' : soldOut ? 'Sold Out' : 'Get Free Ticket'}
+                    {claimingEventId === event.id
+                      ? 'Claiming...'
+                      : walletLoading
+                        ? 'Loading Wallet...'
+                        : claim
+                          ? 'Claimed'
+                          : soldOut
+                            ? 'Sold Out'
+                            : 'Get Free Ticket'}
                   </span>
                 </MagneticButton>
               </div>
