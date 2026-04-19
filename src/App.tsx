@@ -73,6 +73,18 @@ export default function App() {
   const { syncTime } = useTimeStore();
   const [currentPage, setCurrentPage] = useState(() => getPageFromPath(window.location.pathname));
 
+  const navigateTo = (page: string, options?: { replace?: boolean }) => {
+    const nextPath = getPathFromPage(page);
+    if (window.location.pathname !== nextPath) {
+      if (options?.replace) {
+        window.history.replaceState({ page }, '', nextPath);
+      } else {
+        window.history.pushState({ page }, '', nextPath);
+      }
+    }
+    setCurrentPage(page);
+  };
+
   useEffect(() => {
     syncTime();
 
@@ -124,13 +136,6 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  useEffect(() => {
-    const nextPath = getPathFromPage(currentPage);
-    if (window.location.pathname !== nextPath) {
-      window.history.replaceState(null, '', nextPath);
-    }
-  }, [currentPage]);
-
   const pageVariants = {
     initial: { opacity: 0, y: 8 },
     animate: { opacity: 1, y: 0 },
@@ -139,13 +144,13 @@ export default function App() {
 
   const renderPage = () => {
     if (currentPage === 'scanner') {
-      return <Scanner onExit={() => setCurrentPage('discovery')} />;
+      return <Scanner onExit={() => navigateTo('discovery')} />;
     }
     if (!profile) return <Login />;
     switch (currentPage) {
-      case 'discovery': return <Dashboard onOpenScanner={() => setCurrentPage('scanner')} />;
+      case 'discovery': return <Dashboard onOpenScanner={() => navigateTo('scanner')} />;
       case 'volunteer': return <VolunteerPage />;
-      default: return <Dashboard onOpenScanner={() => setCurrentPage('scanner')} />;
+      default: return <Dashboard onOpenScanner={() => navigateTo('scanner')} />;
     }
   };
 
@@ -156,7 +161,7 @@ export default function App() {
       <AmbientBackground />
 
       {profile && currentPage !== 'scanner' && (
-        <NavBar currentPage={currentPage} onNavigate={setCurrentPage} />
+        <NavBar currentPage={currentPage} onNavigate={navigateTo} />
       )}
 
       <div className="relative z-10">

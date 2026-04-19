@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import type { Event } from '../../lib/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -8,7 +9,6 @@ import EventRoleSelector, { type EventWorkspaceMode } from './EventRoleSelector'
 import GlassCard from '../ui/GlassCard';
 import MagneticButton from '../ui/MagneticButton';
 import OperatorAccessPanel from './OperatorAccessPanel';
-import { useState } from 'react';
 
 interface EventBookingDiscoveryProps {
   events: Event[];
@@ -25,7 +25,16 @@ export default function EventBookingDiscovery({
 }: EventBookingDiscoveryProps) {
   const { profile } = useAuthStore();
   const { session } = useOperatorSessionStore();
-  const [mode, setMode] = useState<EventWorkspaceMode>('customer');
+  const [mode, setMode] = useState<EventWorkspaceMode>(() => {
+    if (typeof window === 'undefined') return 'customer';
+    const stored = window.sessionStorage.getItem('sphere-event-workspace-mode');
+    return stored === 'admin' || stored === 'operator' || stored === 'customer' ? stored : 'customer';
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.sessionStorage.setItem('sphere-event-workspace-mode', mode);
+  }, [mode]);
 
   return (
     <div className="space-y-6">

@@ -16,7 +16,11 @@ export default function Dashboard({ onOpenScanner }: DashboardProps) {
   const { profile } = useAuthStore();
   const [events, setEvents] = useState<Event[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
-  const [discoveryMode, setDiscoveryMode] = useState<'events' | 'rooms' | null>(null);
+  const [discoveryMode, setDiscoveryMode] = useState<'events' | 'rooms' | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const stored = window.sessionStorage.getItem('sphere-discovery-mode');
+    return stored === 'events' || stored === 'rooms' ? stored : null;
+  });
 
   useEffect(() => {
     void fetchData();
@@ -36,6 +40,15 @@ export default function Dashboard({ onOpenScanner }: DashboardProps) {
       void supabase.removeChannel(channel);
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (discoveryMode) {
+      window.sessionStorage.setItem('sphere-discovery-mode', discoveryMode);
+    } else {
+      window.sessionStorage.removeItem('sphere-discovery-mode');
+    }
+  }, [discoveryMode]);
 
   async function fetchData() {
     const [{ data: evData }] = await Promise.all([
