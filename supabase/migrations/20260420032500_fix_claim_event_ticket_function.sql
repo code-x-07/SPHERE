@@ -11,10 +11,10 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  current_user uuid := auth.uid();
+  requester_id uuid := auth.uid();
   generated_hash text;
 BEGIN
-  IF current_user IS NULL THEN
+  IF requester_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
   END IF;
 
@@ -30,7 +30,7 @@ BEGIN
     SELECT 1
     FROM public.event_tickets et
     WHERE et.event_id = target_event_id
-      AND et.user_id = current_user
+      AND et.user_id = requester_id
   ) THEN
     RETURN QUERY
     SELECT
@@ -41,7 +41,7 @@ BEGIN
       et.created_at
     FROM public.event_tickets et
     WHERE et.event_id = target_event_id
-      AND et.user_id = current_user
+      AND et.user_id = requester_id
     LIMIT 1;
     RETURN;
   END IF;
@@ -70,7 +70,7 @@ BEGIN
   END LOOP;
 
   INSERT INTO public.event_tickets (event_id, user_id, ticket_hash, status)
-  VALUES (target_event_id, current_user, upper(generated_hash), 'active');
+  VALUES (target_event_id, requester_id, upper(generated_hash), 'active');
 
   UPDATE public.events
   SET registered = registered + 1
@@ -85,7 +85,7 @@ BEGIN
     et.created_at
   FROM public.event_tickets et
   WHERE et.event_id = target_event_id
-    AND et.user_id = current_user
+    AND et.user_id = requester_id
   LIMIT 1;
 END;
 $$;

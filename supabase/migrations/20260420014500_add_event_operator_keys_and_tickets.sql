@@ -267,13 +267,13 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  current_user uuid := auth.uid();
+  requester_id uuid := auth.uid();
   existing_ticket public.event_tickets%ROWTYPE;
   next_ticket public.event_tickets%ROWTYPE;
   source_event public.events%ROWTYPE;
   raw_hash text;
 BEGIN
-  IF current_user IS NULL THEN
+  IF requester_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
   END IF;
 
@@ -288,7 +288,7 @@ BEGIN
   SELECT * INTO existing_ticket
   FROM public.event_tickets et
   WHERE et.event_id = target_event_id
-    AND et.user_id = current_user
+    AND et.user_id = requester_id
   LIMIT 1;
 
   IF FOUND THEN
@@ -309,7 +309,7 @@ BEGIN
   END LOOP;
 
   INSERT INTO public.event_tickets (event_id, user_id, ticket_hash, status)
-  VALUES (target_event_id, current_user, upper(raw_hash), 'active')
+  VALUES (target_event_id, requester_id, upper(raw_hash), 'active')
   RETURNING * INTO next_ticket;
 
   UPDATE public.events
