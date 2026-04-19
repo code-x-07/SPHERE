@@ -1,8 +1,78 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Shield, Activity } from 'lucide-react';
+import { ArrowLeft, Shield, Activity, LogOut, CalendarClock, MapPin } from 'lucide-react';
 import ScannerInterface from '../components/modules/ScannerInterface';
+import OperatorAccessPanel from '../components/modules/OperatorAccessPanel';
+import { useOperatorSessionStore } from '../store/useOperatorSessionStore';
+import { supabase } from '../lib/supabase';
+import MagneticButton from '../components/ui/MagneticButton';
 
-export default function Scanner() {
+interface ScannerProps {
+  onExit: () => void;
+}
+
+interface OperatorMetrics {
+  total_scans: number;
+  valid_scans: number;
+  invalid_scans: number;
+  already_scanned_scans: number;
+}
+
+export default function Scanner({ onExit }: ScannerProps) {
+  const { session, clearSession } = useOperatorSessionStore();
+  const [metrics, setMetrics] = useState<OperatorMetrics>({
+    total_scans: 0,
+    valid_scans: 0,
+    invalid_scans: 0,
+    already_scanned_scans: 0,
+  });
+
+  useEffect(() => {
+    if (session) {
+      void refreshMetrics();
+    }
+  }, [session?.eventId]);
+
+  async function refreshMetrics() {
+    if (!session) return;
+    const { data } = await supabase.rpc('get_operator_scan_metrics', {
+      input_key: session.operatorKey,
+    });
+    const next = (data || [])[0];
+    if (next) {
+      setMetrics({
+        total_scans: Number(next.total_scans || 0),
+        valid_scans: Number(next.valid_scans || 0),
+        invalid_scans: Number(next.invalid_scans || 0),
+        already_scanned_scans: Number(next.already_scanned_scans || 0),
+      });
+    }
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen pt-24 pb-10 px-4">
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-white/30 text-sm font-medium mb-1">Direct Scanner Portal</p>
+              <h1 className="text-white text-3xl font-bold" style={{ letterSpacing: '-0.03em' }}>
+                Unlock the event scanner
+              </h1>
+            </div>
+            <MagneticButton variant="ghost" onClick={onExit}>
+              <span className="flex items-center gap-2">
+                <ArrowLeft size={15} />
+                Back
+              </span>
+            </MagneticButton>
+          </div>
+          <OperatorAccessPanel />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pt-16 flex flex-col">
       <div className="absolute top-20 left-0 right-0 z-10 px-4 pointer-events-none">
@@ -20,24 +90,57 @@ export default function Scanner() {
           >
             <div className="flex items-center gap-2">
               <Shield size={13} className="text-sky-400" />
-              <span className="text-white/60 text-xs font-medium">Operator Mode</span>
+              <div>
+                <span className="block text-white/60 text-xs font-medium">Operator Mode</span>
+                <span className="block text-white/30 text-[10px]">{session.eventTitle}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-emerald-400 text-[10px] font-medium">Redis Live</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Zap size={11} className="text-amber-400" />
-                <span className="text-amber-400 text-[10px]">&lt;50ms</span>
-              </div>
+            <div className="flex items-center gap-2 pointer-events-auto">
+              <button
+                onClick={onExit}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/55 hover:text-white"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <ArrowLeft size={14} />
+              </button>
+              <button
+                onClick={() => {
+                  clearSession();
+                  onExit();
+                }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/55 hover:text-white"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.08 }}
+            className="flex items-center justify-between px-4 py-2.5 rounded-xl"
+            style={{
+              background: 'rgba(5,5,5,0.75)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <CalendarClock size={13} className="text-sky-400" />
+              <span className="text-white/50 text-xs">{new Date(session.eventDate).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin size={13} className="text-sky-400" />
+              <span className="text-white/50 text-xs">{session.venue}</span>
             </div>
           </motion.div>
         </div>
       </div>
 
       <div className="flex-1 relative">
-        <ScannerInterface />
+        <ScannerInterface onScanComplete={refreshMetrics} />
       </div>
 
       <motion.div
@@ -56,9 +159,9 @@ export default function Scanner() {
             }}
           >
             {[
-              { label: 'Scanned Today', value: '47', color: 'text-sky-400' },
-              { label: 'Valid', value: '45', color: 'text-emerald-400' },
-              { label: 'Invalid', value: '2', color: 'text-red-400' },
+              { label: 'Scanned Today', value: metrics.total_scans, color: 'text-sky-400' },
+              { label: 'Valid', value: metrics.valid_scans, color: 'text-emerald-400' },
+              { label: 'Invalid', value: metrics.invalid_scans + metrics.already_scanned_scans, color: 'text-red-400' },
             ].map((s) => (
               <div key={s.label} className="text-center">
                 <p className={`text-base font-bold ${s.color}`} style={{ letterSpacing: '-0.02em' }}>{s.value}</p>

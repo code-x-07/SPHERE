@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { allowedGoogleDomain, isValidDomain, supabase } from './lib/supabase';
 import { useAuthStore } from './store/useAuthStore';
+import { useOperatorSessionStore } from './store/useOperatorSessionStore';
 import { useToastStore } from './store/useToastStore';
 import { useTimeStore } from './store/useTimeStore';
 import AmbientBackground from './components/3d/AmbientBackground';
@@ -12,6 +13,23 @@ import Scanner from './pages/Scanner';
 import VolunteerPage from './pages/VolunteerPage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Hexagon } from 'lucide-react';
+
+function getPageFromPath(pathname: string) {
+  if (pathname.startsWith('/scanner')) return 'scanner';
+  if (pathname.startsWith('/volunteer')) return 'volunteer';
+  return 'discovery';
+}
+
+function getPathFromPage(page: string) {
+  switch (page) {
+    case 'scanner':
+      return '/scanner';
+    case 'volunteer':
+      return '/volunteer';
+    default:
+      return '/';
+  }
+}
 
 function LoadingScreen() {
   return (
@@ -50,9 +68,10 @@ function LoadingScreen() {
 
 export default function App() {
   const { profile, loading, initialized, setLoading, fetchProfile } = useAuthStore();
+  const { session: operatorSession } = useOperatorSessionStore();
   const { addToast } = useToastStore();
   const { syncTime } = useTimeStore();
-  const [currentPage, setCurrentPage] = useState('discovery');
+  const [currentPage, setCurrentPage] = useState(() => getPageFromPath(window.location.pathname));
 
   useEffect(() => {
     syncTime();
@@ -97,14 +116,20 @@ export default function App() {
   }, [addToast, fetchProfile, setLoading, syncTime]);
 
   useEffect(() => {
-    if (profile) {
-      if (profile.role === 'operator') {
-        setCurrentPage('scanner');
-      } else {
-        setCurrentPage('discovery');
-      }
+    const handlePopState = () => {
+      setCurrentPage(getPageFromPath(window.location.pathname));
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    const nextPath = getPathFromPage(currentPage);
+    if (window.location.pathname !== nextPath) {
+      window.history.replaceState(null, '', nextPath);
     }
-  }, [profile?.id]);
+  }, [currentPage]);
 
   const pageVariants = {
     initial: { opacity: 0, y: 8 },
@@ -113,12 +138,14 @@ export default function App() {
   };
 
   const renderPage = () => {
+    if (currentPage === 'scanner') {
+      return <Scanner onExit={() => setCurrentPage('discovery')} />;
+    }
     if (!profile) return <Login />;
     switch (currentPage) {
-      case 'discovery': return <Dashboard />;
-      case 'scanner': return <Scanner />;
+      case 'discovery': return <Dashboard onOpenScanner={() => setCurrentPage('scanner')} />;
       case 'volunteer': return <VolunteerPage />;
-      default: return <Dashboard />;
+      default: return <Dashboard onOpenScanner={() => setCurrentPage('scanner')} />;
     }
   };
 
@@ -128,14 +155,14 @@ export default function App() {
     <div className="relative min-h-screen" style={{ background: '#050505' }}>
       <AmbientBackground />
 
-      {profile && (
+      {profile && currentPage !== 'scanner' && (
         <NavBar currentPage={currentPage} onNavigate={setCurrentPage} />
       )}
 
       <div className="relative z-10">
         <AnimatePresence mode="wait">
           <motion.div
-            key={profile ? currentPage : 'login'}
+            key={currentPage === 'scanner' ? `scanner-${operatorSession?.eventId || 'locked'}` : profile ? currentPage : 'login'}
             variants={pageVariants}
             initial="initial"
             animate="animate"

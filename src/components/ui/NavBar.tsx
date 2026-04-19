@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { LayoutDashboard, QrCode, Users, LogOut, Hexagon } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Hexagon } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 
 interface NavBarProps {
@@ -12,7 +12,6 @@ export default function NavBar({ currentPage, onNavigate }: NavBarProps) {
 
   const navItems = [
     { id: 'discovery', label: 'Discovery', icon: LayoutDashboard, roles: ['student', 'admin'] },
-    { id: 'scanner', label: 'Scanner', icon: QrCode, roles: ['operator', 'admin'] },
     { id: 'volunteer', label: 'Volunteer', icon: Users, roles: ['student', 'admin'] },
   ];
 

@@ -30,6 +30,14 @@ export interface Event {
   created_at: string;
 }
 
+export interface EventAdminRecord extends Event {
+  operator_auth_key?: string;
+  tickets_claimed?: number;
+  tickets_scanned?: number;
+  invalid_scans?: number;
+  already_scanned?: number;
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -71,6 +79,29 @@ export interface VolunteerApplication {
   experience: string;
   status: 'pending' | 'approved' | 'rejected';
   applied_at: string;
+}
+
+export interface EventTicket {
+  id: string;
+  event_id: string;
+  user_id: string;
+  ticket_hash: string;
+  status: 'active' | 'used' | 'cancelled';
+  created_at: string;
+  scanned_at: string | null;
+  events?: {
+    title: string;
+    venue: string;
+    event_date: string;
+  } | null;
+}
+
+export interface OperatorSession {
+  eventId: string;
+  eventTitle: string;
+  venue: string;
+  eventDate: string;
+  operatorKey: string;
 }
 
 export const allowedGoogleDomain = (import.meta.env.VITE_ALLOWED_GOOGLE_DOMAIN as string | undefined)?.toLowerCase() || 'goa.bits-pilani.ac.in';

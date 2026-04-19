@@ -1,21 +1,56 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, CameraOff, CheckCircle2, XCircle, Hash } from 'lucide-react';
+import { CameraOff, CheckCircle2, XCircle, Hash } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { useAuthStore } from '../../store/useAuthStore';
+import { useOperatorSessionStore } from '../../store/useOperatorSessionStore';
+import { useToastStore } from '../../store/useToastStore';
 
 type ScanStatus = 'idle' | 'scanning' | 'valid' | 'invalid' | 'already_scanned';
 
-export default function ScannerInterface() {
-  const { profile } = useAuthStore();
+interface ScannerInterfaceProps {
+  onScanComplete?: () => void;
+}
+
+interface BarcodeResult {
+  rawValue?: string;
+}
+
+type BarcodeDetectorCtor = new (options?: { formats?: string[] }) => {
+  detect: (source: HTMLVideoElement) => Promise<BarcodeResult[]>;
+};
+
+interface ScanFeedback {
+  attendeeName?: string | null;
+  attendeeEmail?: string | null;
+  message?: string | null;
+}
+
+export default function ScannerInterface({ onScanComplete }: ScannerInterfaceProps) {
+  const { addToast } = useToastStore();
+  const { session, clearSession } = useOperatorSessionStore();
   const [cameraAllowed, setCameraAllowed] = useState<boolean | null>(null);
   const [status, setStatus] = useState<ScanStatus>('idle');
   const [manualHash, setManualHash] = useState('');
   const [scannedCode, setScannedCode] = useState('');
+  const [feedback, setFeedback] = useState<ScanFeedback | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const detectorRef = useRef<{ detect: (source: HTMLVideoElement) => Promise<BarcodeResult[]> } | null>(null);
   const isResetting = useRef(false);
+  const statusRef = useRef<ScanStatus>('idle');
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+  useEffect(() => {
+    const detector = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
+    if (detector) {
+      detectorRef.current = new detector({ formats: ['qr_code'] });
+    }
+  }, []);
 
   const requestCamera = useCallback(async () => {
     try {
@@ -39,55 +74,97 @@ export default function ScannerInterface() {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       if (scanTimeoutRef.current) clearTimeout(scanTimeoutRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [requestCamera]);
 
-  async function validateTicket(hash: string) {
-    if (!hash.trim() || isResetting.current) return;
+  const scheduleReset = useCallback(() => {
+    scanTimeoutRef.current = setTimeout(() => {
+      setStatus('scanning');
+      setScannedCode('');
+      setFeedback(null);
+      setManualHash('');
+      isResetting.current = false;
+    }, 1200);
+  }, []);
+
+  const validateTicket = useCallback(async (hash: string) => {
+    if (!hash.trim() || isResetting.current || !session) return;
     isResetting.current = true;
 
-    const validHashes = ['TICKET-001', 'TICKET-002', 'TICKET-003', 'EVT-VALID-XK91'];
-    const alreadyScanned = ['TICKET-USED'];
-    let newStatus: ScanStatus;
+    const normalizedHash = hash.trim().toUpperCase();
+    const { data, error } = await supabase.rpc('process_event_scan', {
+      input_key: session.operatorKey,
+      input_hash: normalizedHash,
+    });
 
-    if (alreadyScanned.includes(hash.toUpperCase())) {
-      newStatus = 'already_scanned';
-    } else if (validHashes.includes(hash.toUpperCase()) || hash.length >= 8) {
-      newStatus = 'valid';
-    } else {
-      newStatus = 'invalid';
+    if (error) {
+      clearSession();
+      setStatus('invalid');
+      setScannedCode(normalizedHash);
+      setFeedback({ message: 'Operator session expired. Re-enter the event key.' });
+      addToast({ type: 'error', title: 'Scanner Session Lost', message: error.message });
+      scheduleReset();
+      return;
     }
 
+    const result = (data || [])[0];
+    const newStatus = (result?.scan_status || 'invalid') as ScanStatus;
+
     setStatus(newStatus);
-    setScannedCode(hash);
+    setScannedCode(normalizedHash);
+    setFeedback({
+      attendeeName: result?.attendee_name,
+      attendeeEmail: result?.attendee_email,
+      message: result?.message,
+    });
 
     if (newStatus === 'valid' && navigator.vibrate) {
       navigator.vibrate([100, 50, 100]);
     } else if (newStatus === 'invalid' && navigator.vibrate) {
       navigator.vibrate([300]);
+    } else if (newStatus === 'already_scanned' && navigator.vibrate) {
+      navigator.vibrate([120, 40, 120, 40, 120]);
     }
 
-    if (profile) {
-      await supabase.from('scan_logs').insert({
-        ticket_hash: hash,
-        operator_id: profile.id,
-        status: newStatus === 'already_scanned' ? 'already_scanned' : newStatus === 'valid' ? 'valid' : 'invalid',
-      });
-    }
+    onScanComplete?.();
+    scheduleReset();
+  }, [addToast, clearSession, onScanComplete, scheduleReset, session]);
 
-    scanTimeoutRef.current = setTimeout(() => {
-      setStatus('scanning');
-      setScannedCode('');
-      setManualHash('');
-      isResetting.current = false;
-    }, 900);
-  }
+  useEffect(() => {
+    if (!cameraAllowed || !detectorRef.current) return;
 
-  function simulateScan() {
-    const samples = ['TICKET-001', 'TICKET-USED', 'BAD', 'EVT-VALID-XK91'];
-    const pick = samples[Math.floor(Math.random() * samples.length)];
-    validateTicket(pick);
-  }
+    let active = true;
+    const tick = async () => {
+      if (!active || !videoRef.current) return;
+
+      if (statusRef.current === 'scanning' && !isResetting.current) {
+        try {
+          const detector = detectorRef.current;
+          if (!detector) {
+            rafRef.current = requestAnimationFrame(tick);
+            return;
+          }
+          const detected = await detector.detect(videoRef.current);
+          const value = detected[0]?.rawValue;
+          if (value) {
+            await validateTicket(value);
+          }
+        } catch {
+          // Ignore browser-specific barcode detection issues and fall back to manual entry.
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      active = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [cameraAllowed, validateTicket]);
 
   const overlayConfig = {
     idle: null,
@@ -111,7 +188,7 @@ export default function ScannerInterface() {
           </div>
           <div className="text-center">
             <h3 className="text-white font-bold text-lg mb-1" style={{ letterSpacing: '-0.02em' }}>Camera Access Denied</h3>
-            <p className="text-white/40 text-sm">Enter ticket hash manually</p>
+            <p className="text-white/40 text-sm">Enter the ticket hash manually for this event.</p>
           </div>
 
           <div className="w-full max-w-sm">
@@ -125,13 +202,13 @@ export default function ScannerInterface() {
               <input
                 value={manualHash}
                 onChange={(e) => setManualHash(e.target.value.toUpperCase())}
-                onKeyDown={(e) => e.key === 'Enter' && validateTicket(manualHash)}
-                placeholder="Enter Hash (e.g. TICKET-001)"
+                onKeyDown={(e) => e.key === 'Enter' && void validateTicket(manualHash)}
+                placeholder="Enter Hash (e.g. SPH-AB12-CD34-EF56)"
                 className="flex-1 bg-transparent text-white text-sm placeholder-white/25 outline-none py-3 font-mono"
               />
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={() => validateTicket(manualHash)}
+                onClick={() => void validateTicket(manualHash)}
                 className="px-4 py-2 rounded-lg text-white text-sm font-semibold"
                 style={{ background: 'linear-gradient(135deg, #0ea5e9, #0284c7)' }}
               >
@@ -156,6 +233,7 @@ export default function ScannerInterface() {
                 <div>
                   <p className="text-white font-bold text-sm">{overlay.label}</p>
                   <p className="text-white/40 text-xs font-mono">{scannedCode}</p>
+                  {feedback?.message && <p className="text-white/35 text-xs mt-1">{feedback.message}</p>}
                 </div>
               </motion.div>
             )}
@@ -174,7 +252,9 @@ export default function ScannerInterface() {
           <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
             <div className="mb-6 text-center">
               <h3 className="text-white font-bold text-xl tracking-tight drop-shadow-lg">QR Scanner</h3>
-              <p className="text-white/60 text-sm mt-1 drop-shadow">Point camera at ticket QR code</p>
+              <p className="text-white/60 text-sm mt-1 drop-shadow">
+                Point camera at the QR code for {session?.eventTitle || 'this event'}
+              </p>
             </div>
 
             <div className="relative" style={{ width: 240, height: 240 }}>
@@ -202,19 +282,39 @@ export default function ScannerInterface() {
               )}
             </div>
 
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={simulateScan}
-              className="mt-8 px-8 py-3 rounded-xl font-semibold text-white text-sm flex items-center gap-2"
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.2)',
-              }}
-            >
-              <Camera size={16} />
-              Simulate Scan (Demo)
-            </motion.button>
+            <div className="mt-8 rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(5,5,5,0.55)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <p className="text-white/55 text-xs">
+                {detectorRef.current
+                  ? 'QR auto-detection is active. Manual entry is available if camera scanning misses a code.'
+                  : 'Your browser does not expose native QR detection here. Use the manual fallback below.'}
+              </p>
+            </div>
+
+            <div className="mt-5 w-full max-w-sm px-4">
+              <div
+                className="flex gap-2 p-1 rounded-xl"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                <div className="flex items-center pl-3">
+                  <Hash size={15} className="text-white/40" />
+                </div>
+                <input
+                  value={manualHash}
+                  onChange={(e) => setManualHash(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === 'Enter' && void validateTicket(manualHash)}
+                  placeholder="Manual hash fallback"
+                  className="flex-1 bg-transparent text-white text-sm placeholder-white/25 outline-none py-3 font-mono"
+                />
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => void validateTicket(manualHash)}
+                  className="px-4 py-2 rounded-lg text-white text-sm font-semibold"
+                  style={{ background: 'linear-gradient(135deg, #0ea5e9, #0284c7)' }}
+                >
+                  Validate
+                </motion.button>
+              </div>
+            </div>
           </div>
 
           <AnimatePresence>
@@ -236,6 +336,12 @@ export default function ScannerInterface() {
                 </motion.div>
                 <p className="text-white font-black text-3xl tracking-widest">{overlay.label}</p>
                 <p className="text-white/70 font-mono text-sm">{scannedCode}</p>
+                {feedback?.attendeeName && (
+                  <p className="text-white/85 text-sm">{feedback.attendeeName}</p>
+                )}
+                {feedback?.message && (
+                  <p className="text-white/70 text-xs">{feedback.message}</p>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
