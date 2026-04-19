@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Calendar, MapPin, QrCode, Ticket, Users } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { Event, EventTicket } from '../../lib/supabase';
@@ -23,6 +24,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
   const [qrCodes, setQrCodes] = useState<Record<string, string>>({});
   const [claimingEventId, setClaimingEventId] = useState<string | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -121,6 +123,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
     () => new Map(wallet.map((ticket) => [ticket.event_id, ticket])),
     [wallet]
   );
+  const selectedTicket = wallet.find((ticket) => ticket.id === selectedTicketId) || null;
 
   async function handleClaim(eventId: string) {
     setClaimingEventId(eventId);
@@ -223,9 +226,12 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                     </div>
                   </div>
                   <div className="mt-4 grid grid-cols-[108px_1fr] gap-4 items-center">
-                    <div
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTicketId(ticket.id)}
                       className="rounded-2xl p-2 flex items-center justify-center"
                       style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                      aria-label={`Open large QR for ${ticket.events?.title || 'event ticket'}`}
                     >
                       {qrCodes[ticket.id] ? (
                         <img
@@ -236,7 +242,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                       ) : (
                         <div className="w-24 h-24 rounded-xl border border-white/10 animate-pulse" />
                       )}
-                    </div>
+                    </button>
                     <div className="min-w-0">
                       <div className="rounded-xl px-3 py-2 font-mono text-sm text-sky-200 break-all" style={{ background: 'rgba(14,165,233,0.08)' }}>
                         {ticket.ticket_hash}
@@ -244,6 +250,13 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                       <p className="text-white/35 text-xs mt-2">
                         Present this QR at the gate. The operator scanner is locked to this event and validates only this ticket.
                       </p>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTicketId(ticket.id)}
+                        className="text-sky-300 text-xs font-medium mt-2"
+                      >
+                        Open full-screen QR
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -304,6 +317,71 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
           );
         })}
       </div>
+
+      <AnimatePresence>
+        {selectedTicket && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(2,6,23,0.86)', backdropFilter: 'blur(14px)' }}
+            onClick={() => setSelectedTicketId(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md rounded-[28px] p-6"
+              style={{
+                background: 'linear-gradient(180deg, rgba(15,23,42,0.98), rgba(2,6,23,0.98))',
+                border: '1px solid rgba(148,163,184,0.2)',
+                boxShadow: '0 30px 80px rgba(0,0,0,0.45)',
+              }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div>
+                  <p className="text-white text-xl font-semibold">{selectedTicket.events?.title || 'Event Ticket'}</p>
+                  <p className="text-white/45 text-sm mt-1">{selectedTicket.events?.venue || 'Campus Venue'}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTicketId(null)}
+                  className="text-white/45 hover:text-white text-sm"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div
+                className="rounded-[24px] p-5 flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                {qrCodes[selectedTicket.id] ? (
+                  <img
+                    src={qrCodes[selectedTicket.id]}
+                    alt={`${selectedTicket.events?.title || 'Event'} large QR`}
+                    className="w-full max-w-[320px] aspect-square object-contain"
+                  />
+                ) : (
+                  <div className="w-[320px] max-w-full aspect-square rounded-2xl border border-white/10 animate-pulse" />
+                )}
+              </div>
+
+              <div className="mt-5 rounded-2xl px-4 py-3" style={{ background: 'rgba(14,165,233,0.08)' }}>
+                <p className="text-white/35 text-xs uppercase tracking-[0.2em]">Ticket Hash</p>
+                <p className="text-sky-200 font-mono text-base mt-2 break-all">{selectedTicket.ticket_hash}</p>
+              </div>
+
+              <p className="text-white/45 text-sm mt-4 leading-relaxed">
+                Open this pass on one phone and use a second phone in Operator mode to scan it. If camera scan misses, the operator can still enter the hash manually.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
