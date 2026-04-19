@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar, MapPin, QrCode, Ticket, Users } from 'lucide-react';
+import QRCode from 'qrcode';
 import type { Event, EventTicket } from '../../lib/supabase';
 import { supabase } from '../../lib/supabase';
+import { buildTicketQrPayload } from '../../lib/eventTickets';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import HeroSlider3D from '../3d/HeroSlider3D';
@@ -18,6 +20,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
   const { profile } = useAuthStore();
   const { addToast } = useToastStore();
   const [wallet, setWallet] = useState<EventTicket[]>([]);
+  const [qrCodes, setQrCodes] = useState<Record<string, string>>({});
   const [claimingEventId, setClaimingEventId] = useState<string | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
 
@@ -26,6 +29,42 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
       void fetchWallet();
     }
   }, [profile?.id]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function generateCodes() {
+      const entries = await Promise.all(
+        wallet.map(async (ticket) => {
+          const payload = ticket.qr_payload || buildTicketQrPayload(ticket.event_id, ticket.ticket_hash);
+          const dataUrl = await QRCode.toDataURL(payload, {
+            errorCorrectionLevel: 'M',
+            margin: 1,
+            width: 220,
+            color: {
+              dark: '#f8fafc',
+              light: '#00000000',
+            },
+          });
+          return [ticket.id, dataUrl] as const;
+        })
+      );
+
+      if (active) {
+        setQrCodes(Object.fromEntries(entries));
+      }
+    }
+
+    if (wallet.length > 0) {
+      void generateCodes();
+    } else {
+      setQrCodes({});
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [wallet]);
 
   async function fetchWallet() {
     if (!profile) return;
@@ -44,6 +83,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
       const normalized = ((data || []) as Array<EventTicket & { events?: EventTicket['events'][] }>).map((ticket) => ({
         ...ticket,
         events: Array.isArray(ticket.events) ? ticket.events[0] || null : ticket.events || null,
+        qr_payload: buildTicketQrPayload(ticket.event_id, ticket.ticket_hash),
       }));
       setWallet(normalized);
     }
@@ -59,17 +99,36 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
   async function handleClaim(eventId: string) {
     setClaimingEventId(eventId);
 
-    const { error } = await supabase.rpc('claim_event_ticket', {
-      target_event_id: eventId,
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+
+    if (!accessToken) {
+      addToast({ type: 'error', title: 'Session Missing', message: 'Sign in again before claiming a ticket.' });
+      setClaimingEventId(null);
+      return;
+    }
+
+    const response = await fetch('/api/tickets/claim', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ eventId }),
     });
 
-    if (error) {
-      addToast({ type: 'error', title: 'Ticket Claim Failed', message: error.message });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      addToast({ type: 'error', title: 'Ticket Claim Failed', message: payload.error || 'Ticket claim could not be completed.' });
     } else {
+      const claimedTicket = payload.ticket as EventTicket | undefined;
       addToast({
         type: 'success',
         title: 'Ticket Added to Wallet',
-        message: 'Your gate pass is ready. Show the code to the operator at the venue.',
+        message: claimedTicket?.ticket_hash
+          ? `QR generated for ${claimedTicket.ticket_hash}.`
+          : 'Your gate pass is ready. Show the QR to the operator at the venue.',
       });
       await Promise.all([fetchWallet(), onRefresh()]);
     }
@@ -125,15 +184,41 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                       <p className="text-white font-semibold">{ticket.events?.title || 'Event Ticket'}</p>
                       <p className="text-white/35 text-xs mt-1">{ticket.events?.venue || 'Campus Venue'}</p>
                     </div>
-                    <span
-                      className="text-[10px] uppercase tracking-[0.22em]"
-                      style={{ color: ticket.status === 'used' ? '#fbbf24' : '#34d399' }}
-                    >
-                      {ticket.status}
-                    </span>
+                    <div className="text-right">
+                      <span
+                        className="block text-[10px] uppercase tracking-[0.22em]"
+                        style={{ color: ticket.status === 'used' ? '#fbbf24' : '#34d399' }}
+                      >
+                        {ticket.status}
+                      </span>
+                      <span className="block text-[10px] uppercase tracking-[0.22em] text-sky-300 mt-1">
+                        Free
+                      </span>
+                    </div>
                   </div>
-                  <div className="mt-3 rounded-xl px-3 py-2 font-mono text-sm text-sky-200" style={{ background: 'rgba(14,165,233,0.08)' }}>
-                    {ticket.ticket_hash}
+                  <div className="mt-4 grid grid-cols-[108px_1fr] gap-4 items-center">
+                    <div
+                      className="rounded-2xl p-2 flex items-center justify-center"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                    >
+                      {qrCodes[ticket.id] ? (
+                        <img
+                          src={qrCodes[ticket.id]}
+                          alt={`${ticket.events?.title || 'Event'} QR`}
+                          className="w-24 h-24 object-contain"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 rounded-xl border border-white/10 animate-pulse" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="rounded-xl px-3 py-2 font-mono text-sm text-sky-200 break-all" style={{ background: 'rgba(14,165,233,0.08)' }}>
+                        {ticket.ticket_hash}
+                      </div>
+                      <p className="text-white/35 text-xs mt-2">
+                        Present this QR at the gate. The operator scanner is locked to this event and validates only this ticket.
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -185,7 +270,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                 >
                   <span className="flex items-center gap-2">
                     <QrCode size={14} />
-                    {claimingEventId === event.id ? 'Claiming...' : claim ? 'Claimed' : soldOut ? 'Sold Out' : 'Claim Ticket'}
+                    {claimingEventId === event.id ? 'Claiming...' : claim ? 'Claimed' : soldOut ? 'Sold Out' : 'Get Free Ticket'}
                   </span>
                 </MagneticButton>
               </div>

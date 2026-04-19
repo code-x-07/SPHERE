@@ -89,6 +89,7 @@ export interface EventTicket {
   status: 'active' | 'used' | 'cancelled';
   created_at: string;
   scanned_at: string | null;
+  qr_payload?: string;
   events?: {
     title: string;
     venue: string;

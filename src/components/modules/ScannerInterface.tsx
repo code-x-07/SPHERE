@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CameraOff, CheckCircle2, XCircle, Hash } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import jsQR from 'jsqr';
 import { useOperatorSessionStore } from '../../store/useOperatorSessionStore';
 import { useToastStore } from '../../store/useToastStore';
 
@@ -29,11 +29,13 @@ export default function ScannerInterface({ onScanComplete }: ScannerInterfacePro
   const { addToast } = useToastStore();
   const { session, clearSession } = useOperatorSessionStore();
   const [cameraAllowed, setCameraAllowed] = useState<boolean | null>(null);
+  const [hasNativeDetection, setHasNativeDetection] = useState(false);
   const [status, setStatus] = useState<ScanStatus>('idle');
   const [manualHash, setManualHash] = useState('');
   const [scannedCode, setScannedCode] = useState('');
   const [feedback, setFeedback] = useState<ScanFeedback | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -49,6 +51,7 @@ export default function ScannerInterface({ onScanComplete }: ScannerInterfacePro
     const detector = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
     if (detector) {
       detectorRef.current = new detector({ formats: ['qr_code'] });
+      setHasNativeDetection(true);
     }
   }, []);
 
@@ -88,35 +91,52 @@ export default function ScannerInterface({ onScanComplete }: ScannerInterfacePro
     }, 1200);
   }, []);
 
-  const validateTicket = useCallback(async (hash: string) => {
-    if (!hash.trim() || isResetting.current || !session) return;
+  const validateTicket = useCallback(async (rawCode: string) => {
+    if (!rawCode.trim() || isResetting.current || !session) return;
     isResetting.current = true;
 
-    const normalizedHash = hash.trim().toUpperCase();
-    const { data, error } = await supabase.rpc('process_event_scan', {
-      input_key: session.operatorKey,
-      input_hash: normalizedHash,
+    const response = await fetch('/api/operator/scan', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        operatorKey: session.operatorKey,
+        code: rawCode.trim(),
+      }),
     });
 
-    if (error) {
-      clearSession();
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload.error || 'Scan validation failed';
+      if (/operator key/i.test(message)) {
+        clearSession();
+      }
       setStatus('invalid');
-      setScannedCode(normalizedHash);
-      setFeedback({ message: 'Operator session expired. Re-enter the event key.' });
-      addToast({ type: 'error', title: 'Scanner Session Lost', message: error.message });
+      setScannedCode(rawCode.trim().toUpperCase());
+      setFeedback({
+        message: /operator key/i.test(message)
+          ? 'Operator session expired. Re-enter the event key.'
+          : message,
+      });
+      addToast({
+        type: 'error',
+        title: /operator key/i.test(message) ? 'Scanner Session Lost' : 'Scan Failed',
+        message,
+      });
       scheduleReset();
       return;
     }
 
-    const result = (data || [])[0];
-    const newStatus = (result?.scan_status || 'invalid') as ScanStatus;
+    const newStatus = (payload.scan_status || 'invalid') as ScanStatus;
+    const displayCode = String(payload.ticket_hash || rawCode).trim().toUpperCase();
 
     setStatus(newStatus);
-    setScannedCode(normalizedHash);
+    setScannedCode(displayCode);
     setFeedback({
-      attendeeName: result?.attendee_name,
-      attendeeEmail: result?.attendee_email,
-      message: result?.message,
+      attendeeName: payload.attendee_name,
+      attendeeEmail: payload.attendee_email,
+      message: payload.message,
     });
 
     if (newStatus === 'valid' && navigator.vibrate) {
@@ -131,8 +151,39 @@ export default function ScannerInterface({ onScanComplete }: ScannerInterfacePro
     scheduleReset();
   }, [addToast, clearSession, onScanComplete, scheduleReset, session]);
 
+  const decodeWithJsQr = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (!video || !canvas || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      return null;
+    }
+
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+    if (!width || !height) {
+      return null;
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) {
+      return null;
+    }
+
+    context.drawImage(video, 0, 0, width, height);
+    const image = context.getImageData(0, 0, width, height);
+    const result = jsQR(image.data, image.width, image.height, {
+      inversionAttempts: 'dontInvert',
+    });
+
+    return result?.data || null;
+  }, []);
+
   useEffect(() => {
-    if (!cameraAllowed || !detectorRef.current) return;
+    if (!cameraAllowed) return;
 
     let active = true;
     const tick = async () => {
@@ -140,18 +191,26 @@ export default function ScannerInterface({ onScanComplete }: ScannerInterfacePro
 
       if (statusRef.current === 'scanning' && !isResetting.current) {
         try {
+          let value: string | null = null;
+
           const detector = detectorRef.current;
-          if (!detector) {
-            rafRef.current = requestAnimationFrame(tick);
-            return;
+          if (detector) {
+            const detected = await detector.detect(videoRef.current);
+            value = detected[0]?.rawValue || null;
           }
-          const detected = await detector.detect(videoRef.current);
-          const value = detected[0]?.rawValue;
+
+          if (!value) {
+            value = decodeWithJsQr();
+          }
+
           if (value) {
             await validateTicket(value);
           }
         } catch {
-          // Ignore browser-specific barcode detection issues and fall back to manual entry.
+          const fallbackValue = decodeWithJsQr();
+          if (fallbackValue) {
+            await validateTicket(fallbackValue);
+          }
         }
       }
 
@@ -164,7 +223,7 @@ export default function ScannerInterface({ onScanComplete }: ScannerInterfacePro
       active = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [cameraAllowed, validateTicket]);
+  }, [cameraAllowed, decodeWithJsQr, validateTicket]);
 
   const overlayConfig = {
     idle: null,
@@ -284,9 +343,9 @@ export default function ScannerInterface({ onScanComplete }: ScannerInterfacePro
 
             <div className="mt-8 rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(5,5,5,0.55)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <p className="text-white/55 text-xs">
-                {detectorRef.current
-                  ? 'QR auto-detection is active. Manual entry is available if camera scanning misses a code.'
-                  : 'Your browser does not expose native QR detection here. Use the manual fallback below.'}
+                {hasNativeDetection
+                  ? 'QR auto-detection is active. A frame-based fallback also runs to catch camera scans that the browser misses.'
+                  : 'Native QR detection is unavailable here, so the scanner is using a frame-based fallback plus manual entry.'}
               </p>
             </div>
 
@@ -347,6 +406,7 @@ export default function ScannerInterface({ onScanComplete }: ScannerInterfacePro
           </AnimatePresence>
         </>
       )}
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { ArrowLeft, Shield, Activity, LogOut, CalendarClock, MapPin } from 'luci
 import ScannerInterface from '../components/modules/ScannerInterface';
 import OperatorAccessPanel from '../components/modules/OperatorAccessPanel';
 import { useOperatorSessionStore } from '../store/useOperatorSessionStore';
-import { supabase } from '../lib/supabase';
 import MagneticButton from '../components/ui/MagneticButton';
 
 interface ScannerProps {
@@ -31,22 +30,26 @@ export default function Scanner({ onExit }: ScannerProps) {
     if (session) {
       void refreshMetrics();
     }
-  }, [session?.eventId]);
+  }, [session?.eventId, session?.operatorKey]);
 
   async function refreshMetrics() {
     if (!session) return;
-    const { data } = await supabase.rpc('get_operator_scan_metrics', {
-      input_key: session.operatorKey,
-    });
-    const next = (data || [])[0];
-    if (next) {
-      setMetrics({
-        total_scans: Number(next.total_scans || 0),
-        valid_scans: Number(next.valid_scans || 0),
-        invalid_scans: Number(next.invalid_scans || 0),
-        already_scanned_scans: Number(next.already_scanned_scans || 0),
-      });
+    const response = await fetch(`/api/operator/metrics?operatorKey=${encodeURIComponent(session.operatorKey)}`);
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok || !payload) {
+      if (payload?.error && /operator key/i.test(payload.error)) {
+        clearSession();
+      }
+      return;
     }
+
+    setMetrics({
+      total_scans: Number(payload.total_scans || 0),
+      valid_scans: Number(payload.valid_scans || 0),
+      invalid_scans: Number(payload.invalid_scans || 0),
+      already_scanned_scans: Number(payload.already_scanned_scans || 0),
+    });
   }
 
   if (!session) {
