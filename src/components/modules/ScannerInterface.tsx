@@ -176,7 +176,7 @@ export default function ScannerInterface({ onScanComplete }: ScannerInterfacePro
     context.drawImage(video, 0, 0, width, height);
     const image = context.getImageData(0, 0, width, height);
     const result = jsQR(image.data, image.width, image.height, {
-      inversionAttempts: 'dontInvert',
+      inversionAttempts: 'attemptBoth',
     });
 
     return result?.data || null;

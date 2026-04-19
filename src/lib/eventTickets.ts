@@ -6,17 +6,20 @@ export interface TicketQrPayload {
 }
 
 export function buildTicketQrPayload(eventId: string, ticketHash: string): string {
-  const payload: TicketQrPayload = {
-    kind: 'sphere-ticket',
-    version: 1,
-    eventId,
-    ticketHash: ticketHash.toUpperCase(),
-  };
-
-  return JSON.stringify(payload);
+  return `SPHERE|1|${eventId}|${ticketHash.toUpperCase()}`;
 }
 
 export function parseTicketQrPayload(value: string): TicketQrPayload | null {
+  const compact = value.trim().split('|');
+  if (compact.length === 4 && compact[0] === 'SPHERE' && compact[1] === '1') {
+    return {
+      kind: 'sphere-ticket',
+      version: 1,
+      eventId: compact[2],
+      ticketHash: compact[3].toUpperCase(),
+    };
+  }
+
   try {
     const parsed = JSON.parse(value) as Partial<TicketQrPayload>;
     if (

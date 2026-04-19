@@ -40,12 +40,12 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
         wallet.map(async (ticket) => {
           const payload = ticket.qr_payload || buildTicketQrPayload(ticket.event_id, ticket.ticket_hash);
           const dataUrl = await QRCode.toDataURL(payload, {
-            errorCorrectionLevel: 'M',
+            errorCorrectionLevel: 'L',
             margin: 1,
             width: 220,
             color: {
-              dark: '#f8fafc',
-              light: '#00000000',
+              dark: '#000000',
+              light: '#ffffff',
             },
           });
           return [ticket.id, dataUrl] as const;
