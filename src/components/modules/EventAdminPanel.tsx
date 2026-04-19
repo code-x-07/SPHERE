@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Calendar, KeyRound, LineChart, Pencil, Plus, RotateCcw, Trash2, Users } from 'lucide-react';
 import type { EventAdminRecord } from '../../lib/supabase';
 import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import GlassCard from '../ui/GlassCard';
 import MagneticButton from '../ui/MagneticButton';
@@ -31,6 +32,7 @@ const EMPTY_FORM: AdminEventForm = {
 };
 
 export default function EventAdminPanel({ onRefresh }: EventAdminPanelProps) {
+  const { profile } = useAuthStore();
   const { addToast } = useToastStore();
   const [events, setEvents] = useState<EventAdminRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,13 +42,15 @@ export default function EventAdminPanel({ onRefresh }: EventAdminPanelProps) {
 
   useEffect(() => {
     void fetchAdminData();
-  }, []);
+  }, [profile?.id]);
 
   async function fetchAdminData() {
+    if (!profile) return;
+
     setLoading(true);
 
     const [{ data: eventRows, error: eventError }, { data: keysData }, { data: ticketsData }, { data: scansData }] = await Promise.all([
-      supabase.from('events').select('*').order('event_date', { ascending: true }),
+      supabase.from('events').select('*').eq('organizer_id', profile.id).order('event_date', { ascending: true }),
       supabase.from('event_operator_keys').select('event_id, operator_auth_key'),
       supabase.from('event_tickets').select('event_id, status'),
       supabase.from('scan_logs').select('event_id, status'),

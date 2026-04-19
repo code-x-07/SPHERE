@@ -25,7 +25,7 @@ export default function EventBookingDiscovery({
 }: EventBookingDiscoveryProps) {
   const { profile } = useAuthStore();
   const { session } = useOperatorSessionStore();
-  const [mode, setMode] = useState<EventWorkspaceMode>(profile?.role === 'admin' ? 'admin' : 'customer');
+  const [mode, setMode] = useState<EventWorkspaceMode>('customer');
 
   return (
     <div className="space-y-6">
@@ -56,19 +56,19 @@ export default function EventBookingDiscovery({
         </div>
       </GlassCard>
 
-      <EventRoleSelector mode={mode} onChange={setMode} canAccessAdmin={profile?.role === 'admin'} />
+      <EventRoleSelector mode={mode} onChange={setMode} canAccessAdmin={Boolean(profile)} />
 
       {mode === 'customer' && (
         <EventCustomerView events={events} loading={loading} onRefresh={onRefresh} />
       )}
 
       {mode === 'admin' && (
-        profile?.role === 'admin' ? (
+        profile ? (
           <EventAdminPanel onRefresh={onRefresh} />
         ) : (
           <GlassCard className="text-center py-14">
-            <p className="text-white text-2xl font-semibold">Admin access required</p>
-            <p className="text-white/45 text-sm mt-3">This workspace is reserved for event heads who sign in through the BITS admin account.</p>
+            <p className="text-white text-2xl font-semibold">Sign in required</p>
+            <p className="text-white/45 text-sm mt-3">The event-head workspace opens once you sign in with your BITS account.</p>
           </GlassCard>
         )
       )}
