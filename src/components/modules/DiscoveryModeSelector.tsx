@@ -50,51 +50,78 @@ export default function DiscoveryModeSelector({
             <GlassCard
               glow={isActive}
               glowColor={`${item.accent}30`}
-              className="h-full relative overflow-hidden"
+              className="h-full relative overflow-hidden p-0"
               style={{
                 border: isActive
                   ? `1px solid ${item.accent}55`
                   : '1px solid rgba(255,255,255,0.09)',
                 background: isActive
-                  ? `linear-gradient(135deg, ${item.accent}16, rgba(255,255,255,0.04))`
-                  : 'rgba(255,255,255,0.04)',
+                  ? `linear-gradient(135deg, ${item.accent}18, rgba(255,255,255,0.03) 44%, rgba(255,255,255,0.01))`
+                  : 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
               }}
             >
-              <div
-                className="absolute inset-x-0 top-0 h-24 opacity-70"
-                style={{
-                  background: `radial-gradient(circle at top left, ${item.accent}30, transparent 62%)`,
-                }}
-              />
-              <div className="relative flex items-start justify-between gap-4">
-                <div className="space-y-3">
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                    style={{
-                      background: `${item.accent}18`,
-                      border: `1px solid ${item.accent}35`,
-                    }}
-                  >
-                    <Icon size={20} style={{ color: item.accent }} />
+              <div className="relative overflow-hidden rounded-[28px] p-7">
+                <div
+                  className="absolute inset-0 opacity-80"
+                  style={{
+                    background: `radial-gradient(circle at top left, ${item.accent}30, transparent 30%), radial-gradient(circle at bottom right, ${item.accent}14, transparent 25%)`,
+                  }}
+                />
+                <div className="relative flex items-start justify-between gap-4">
+                  <div className="space-y-5">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-14 h-14 rounded-[20px] flex items-center justify-center"
+                        style={{
+                          background: `${item.accent}18`,
+                          border: `1px solid ${item.accent}35`,
+                          boxShadow: `0 12px 28px ${item.accent}18`,
+                        }}
+                      >
+                        <Icon size={21} style={{ color: item.accent }} />
+                      </div>
+                      <span
+                        className="text-[11px] font-bold uppercase tracking-[0.24em]"
+                        style={{ color: isActive ? item.accent : 'rgba(255,255,255,0.35)' }}
+                      >
+                        {isActive ? 'Active Workspace' : 'Workspace'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-white text-2xl font-bold">
+                        {item.title}
+                      </p>
+                      <p className="text-white/50 text-sm mt-3 max-w-xl leading-relaxed">{item.subtitle}</p>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      {(item.id === 'events'
+                        ? ['Admin keys', 'Live scanner', 'Wallet passes']
+                        : ['Availability timeline', 'Room browser', 'Approval flow']
+                      ).map((feature) => (
+                        <span
+                          key={feature}
+                          className="rounded-full px-3 py-1.5 text-[11px] font-semibold"
+                          style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.62)' }}
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                   <div>
-                    <p className="text-white text-xl font-bold" style={{ letterSpacing: '-0.03em' }}>
-                      {item.title}
-                    </p>
-                    <p className="text-white/50 text-sm mt-2 max-w-xl">{item.subtitle}</p>
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                      style={{
+                        background: isActive ? `${item.accent}22` : 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${isActive ? `${item.accent}30` : 'rgba(255,255,255,0.08)'}`,
+                      }}
+                    >
+                      <ChevronRight
+                        size={18}
+                        style={{ color: isActive ? item.accent : 'rgba(255,255,255,0.45)' }}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                  style={{
-                    background: isActive ? `${item.accent}20` : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${isActive ? `${item.accent}30` : 'rgba(255,255,255,0.08)'}`,
-                  }}
-                >
-                  <ChevronRight
-                    size={16}
-                    style={{ color: isActive ? item.accent : 'rgba(255,255,255,0.45)' }}
-                  />
                 </div>
               </div>
             </GlassCard>

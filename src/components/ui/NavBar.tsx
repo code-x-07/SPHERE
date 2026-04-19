@@ -24,84 +24,94 @@ export default function NavBar({ currentPage, onNavigate }: NavBarProps) {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4"
-      style={{
-        background: 'rgba(5,5,5,0.7)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}
+      className="fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-6"
     >
-      <button
-        onClick={() => onNavigate('discovery')}
-        className="flex items-center gap-2.5 group"
+      <div
+        className="mx-auto flex max-w-7xl items-center justify-between rounded-[26px] px-4 py-3 md:px-6"
+        style={{
+          background: 'linear-gradient(180deg, rgba(10,15,28,0.84), rgba(8,12,24,0.72))',
+          backdropFilter: 'blur(22px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: 'var(--shadow-deep)',
+        }}
       >
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ background: 'linear-gradient(135deg, #0ea5e9, #0284c7)' }}
+        <button
+          onClick={() => onNavigate('discovery')}
+          className="flex items-center gap-3 group"
         >
-          <Hexagon size={16} className="text-white" fill="white" />
-        </div>
-        <span
-          className="text-white font-bold text-lg tracking-tight"
-          style={{ letterSpacing: '-0.03em' }}
-        >
-          SPHERE
-        </span>
-      </button>
-
-      <div className="flex items-center gap-1">
-        {visibleItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentPage === item.id;
-          return (
-            <motion.button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              whileTap={{ scale: 0.95 }}
-              className="relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200"
-              style={{
-                color: isActive ? '#fff' : 'rgba(255,255,255,0.45)',
-                background: isActive ? 'rgba(14,165,233,0.12)' : 'transparent',
-                border: isActive ? '1px solid rgba(14,165,233,0.25)' : '1px solid transparent',
-              }}
-            >
-              <Icon size={15} />
-              <span className="hidden sm:block">{item.label}</span>
-              {isActive && (
-                <motion.div
-                  layoutId="nav-indicator"
-                  className="absolute inset-0 rounded-xl"
-                  style={{ background: 'rgba(14,165,233,0.06)' }}
-                />
-              )}
-            </motion.button>
-          );
-        })}
-      </div>
-
-      <div className="flex items-center gap-3">
-        {profile && (
-          <div className="flex items-center gap-2.5">
-            <div className="text-right hidden sm:block">
-              <p className="text-white text-xs font-semibold leading-none">{profile.full_name || profile.email.split('@')[0]}</p>
-              <p className="text-white/35 text-[10px] mt-0.5 capitalize">{profile.role}</p>
-            </div>
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
-              style={{ background: 'linear-gradient(135deg, #0ea5e9, #0284c7)' }}
-            >
-              {(profile.full_name || profile.email)[0].toUpperCase()}
-            </div>
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-2xl"
+            style={{ background: 'linear-gradient(135deg, #67e8f9, #2563eb)', boxShadow: '0 14px 30px rgba(37,99,235,0.28)' }}
+          >
+            <Hexagon size={18} className="text-white" fill="white" />
           </div>
-        )}
-        <motion.button
-          onClick={signOut}
-          whileTap={{ scale: 0.95 }}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white/80 transition-colors"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-        >
-          <LogOut size={14} />
-        </motion.button>
+          <div className="text-left">
+            <span
+              className="block text-white font-bold text-lg tracking-tight"
+              style={{ letterSpacing: '-0.04em' }}
+            >
+              SPHERE
+            </span>
+            <span className="hidden text-[11px] uppercase tracking-[0.22em] text-white/30 md:block">
+              Campus Discovery Layer
+            </span>
+          </div>
+        </button>
+
+        <div className="hidden items-center gap-2 rounded-2xl border border-white/8 bg-white/5 p-1.5 md:flex">
+          {visibleItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentPage === item.id;
+            return (
+              <motion.button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                whileTap={{ scale: 0.96 }}
+                className="relative flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors duration-200"
+                style={{
+                  color: isActive ? '#fff' : 'rgba(255,255,255,0.48)',
+                  background: isActive ? 'linear-gradient(135deg, rgba(103,232,249,0.16), rgba(37,99,235,0.18))' : 'transparent',
+                  border: isActive ? '1px solid rgba(103,232,249,0.2)' : '1px solid transparent',
+                }}
+              >
+                <Icon size={15} />
+                <span>{item.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    className="absolute inset-0 rounded-2xl"
+                    style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)' }}
+                  />
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-3">
+          {profile && (
+            <div className="flex items-center gap-3">
+              <div className="hidden text-right sm:block">
+                <p className="text-white text-sm font-semibold leading-none">{profile.full_name || profile.email.split('@')[0]}</p>
+                <p className="text-white/35 text-[11px] mt-1 capitalize tracking-[0.16em]">{profile.role}</p>
+              </div>
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-2xl text-white font-bold text-sm"
+                style={{ background: 'linear-gradient(135deg, rgba(103,232,249,0.22), rgba(37,99,235,0.88))', border: '1px solid rgba(255,255,255,0.12)' }}
+              >
+                {(profile.full_name || profile.email)[0].toUpperCase()}
+              </div>
+            </div>
+          )}
+          <motion.button
+            onClick={signOut}
+            whileTap={{ scale: 0.95 }}
+            className="flex h-10 w-10 items-center justify-center rounded-2xl text-white/45 hover:text-white/85 transition-colors"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <LogOut size={14} />
+          </motion.button>
+        </div>
       </div>
     </motion.nav>
   );

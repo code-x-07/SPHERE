@@ -61,10 +61,10 @@ function ParticleField({ mouse }: { mouse: React.MutableRefObject<[number, numbe
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.04}
-        color="#0ea5e9"
+        size={0.05}
+        color="#67e8f9"
         transparent
-        opacity={0.55}
+        opacity={0.5}
         sizeAttenuation
         depthWrite={false}
       />
@@ -116,7 +116,7 @@ function ConnectionLines({ mouse }: { mouse: React.MutableRefObject<[number, num
           itemSize={3}
         />
       </bufferGeometry>
-      <lineBasicMaterial color="#06b6d4" transparent opacity={0.12} />
+      <lineBasicMaterial color="#38bdf8" transparent opacity={0.14} />
     </lineSegments>
   );
 }
@@ -135,7 +135,7 @@ export default function AmbientBackground() {
     <div
       className="fixed inset-0 z-0"
       onMouseMove={handleMouseMove}
-      style={{ background: 'radial-gradient(ellipse at 30% 50%, #050d1a 0%, #050505 60%, #0a0505 100%)' }}
+      style={{ background: 'radial-gradient(ellipse at 30% 50%, #091220 0%, #04060d 58%, #020307 100%)' }}
     >
       <Canvas
         camera={{ position: [0, 0, 8], fov: 60 }}
@@ -149,7 +149,14 @@ export default function AmbientBackground() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(14,165,233,0.04) 0%, transparent 70%)',
+          background:
+            'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(103,232,249,0.05) 0%, transparent 70%), radial-gradient(circle at 85% 15%, rgba(52,211,153,0.06), transparent 22%)',
+        }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(180deg, rgba(4,5,11,0.2), rgba(4,5,11,0.6) 75%, rgba(4,5,11,0.92))',
         }}
       />
     </div>

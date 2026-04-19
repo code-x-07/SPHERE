@@ -42,26 +42,29 @@ export default function MagneticButton({
 
   const variantStyles: Record<string, React.CSSProperties> = {
     primary: {
-      background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+      background: 'linear-gradient(135deg, #67e8f9 0%, #38bdf8 42%, #2563eb 100%)',
       color: '#ffffff',
-      boxShadow: '0 8px 32px rgba(14,165,233,0.35)',
+      border: '1px solid rgba(255,255,255,0.18)',
+      boxShadow: '0 18px 48px rgba(37,99,235,0.26), inset 0 1px 0 rgba(255,255,255,0.3)',
     },
     ghost: {
-      background: 'rgba(255,255,255,0.05)',
-      color: 'rgba(255,255,255,0.8)',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))',
+      color: 'rgba(255,255,255,0.92)',
       border: '1px solid rgba(255,255,255,0.12)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
     },
     danger: {
-      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      background: 'linear-gradient(135deg, #fb7185 0%, #ef4444 45%, #dc2626 100%)',
       color: '#ffffff',
-      boxShadow: '0 8px 32px rgba(239,68,68,0.3)',
+      border: '1px solid rgba(255,255,255,0.14)',
+      boxShadow: '0 18px 44px rgba(239,68,68,0.24), inset 0 1px 0 rgba(255,255,255,0.2)',
     },
   };
 
   const sizeStyles: Record<string, string> = {
-    sm: 'px-4 py-2 text-sm',
-    md: 'px-6 py-3 text-sm',
-    lg: 'px-8 py-4 text-base',
+    sm: 'px-4 py-2.5 text-sm',
+    md: 'px-6 py-3.5 text-sm',
+    lg: 'px-8 py-4.5 text-base',
   };
 
   return (
@@ -76,11 +79,17 @@ export default function MagneticButton({
       whileTap={{ scale: 0.95 }}
       whileHover={{ scale: 1.03 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className={`relative font-semibold rounded-xl tracking-tight cursor-pointer select-none
+      className={`relative overflow-hidden font-semibold rounded-2xl tracking-tight cursor-pointer select-none
         transition-opacity duration-200 ${disabled ? 'opacity-40 cursor-not-allowed' : ''}
         ${sizeStyles[size]} ${className}`}
     >
-      {children}
+      <span
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{
+          background: 'linear-gradient(120deg, rgba(255,255,255,0.18), transparent 32%, transparent 68%, rgba(255,255,255,0.08))',
+        }}
+      />
+      <span className="relative z-[1]">{children}</span>
     </motion.button>
   );
 }

@@ -18,20 +18,16 @@ export default function GlassCard({
 }: GlassCardProps) {
   return (
     <motion.div
-      className={`rounded-2xl ${padding} ${className}`}
+      className={`glass premium-surface rounded-[28px] ${padding} ${className}`}
       style={{
-        background: 'rgba(255,255,255,0.04)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.09)',
         boxShadow: glow
-          ? `0 20px 60px rgba(0,0,0,0.6), 0 0 40px ${glowColor}`
-          : '0 20px 60px rgba(0,0,0,0.5)',
+          ? `var(--shadow-deep), 0 0 0 1px rgba(255,255,255,0.03), 0 0 42px ${glowColor}`
+          : 'var(--shadow-deep), inset 0 1px 0 rgba(255,255,255,0.04)',
         ...rest.style,
       }}
       {...rest}
     >
-      {children}
+      <div className="relative z-[1]">{children}</div>
     </motion.div>
   );
 }
