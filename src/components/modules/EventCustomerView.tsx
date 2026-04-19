@@ -43,6 +43,22 @@ function writeCachedWallet(userId: string, tickets: EventTicket[]) {
   }
 }
 
+function mergeWalletTickets(primary: EventTicket[], fallback: EventTicket[]) {
+  const merged = new Map<string, EventTicket>();
+
+  for (const ticket of fallback) {
+    merged.set(ticket.id, ticket);
+  }
+
+  for (const ticket of primary) {
+    merged.set(ticket.id, ticket);
+  }
+
+  return Array.from(merged.values()).sort(
+    (left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime()
+  );
+}
+
 export default function EventCustomerView({ events, loading, onRefresh }: EventCustomerViewProps) {
   const { profile } = useAuthStore();
   const { addToast } = useToastStore();
@@ -136,6 +152,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
     if (!profile) return;
 
     setWalletLoading(true);
+    const cachedWallet = readCachedWallet(profile.id);
 
     const { data, error } = await supabase
       .from('event_tickets')
@@ -177,8 +194,9 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
         events: eventMap.get(ticket.event_id) || null,
         qr_payload: buildTicketQrPayload(ticket.event_id, ticket.ticket_hash),
       }));
-      setWallet(normalized);
-      writeCachedWallet(profile.id, normalized);
+      const nextWallet = normalized.length > 0 ? mergeWalletTickets(normalized, cachedWallet) : cachedWallet;
+      setWallet(nextWallet);
+      writeCachedWallet(profile.id, nextWallet);
     }
 
     setWalletLoading(false);
@@ -239,14 +257,11 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
             qr_payload: buildTicketQrPayload(claimedTicket.event_id, claimedTicket.ticket_hash),
           };
 
-          const existingIndex = current.findIndex((ticket) => ticket.id === nextTicket.id);
-          if (existingIndex >= 0) {
-            const updated = [...current];
-            updated[existingIndex] = nextTicket;
-            return updated;
+          const nextWallet = mergeWalletTickets([nextTicket], current);
+          if (profile?.id) {
+            writeCachedWallet(profile.id, nextWallet);
           }
-
-          return [nextTicket, ...current];
+          return nextWallet;
         });
       }
       addToast({
