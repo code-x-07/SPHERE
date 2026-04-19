@@ -17,6 +17,7 @@ const CARD_IMAGES = [
 
 export default function HeroSlider3D({ events }: HeroSlider3DProps) {
   const [active, setActive] = useState(0);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const dragX = useMotionValue(0);
 
   const items = events.length > 0 ? events : DEMO_EVENTS;
@@ -62,7 +63,9 @@ export default function HeroSlider3D({ events }: HeroSlider3DProps) {
       <div className="absolute inset-0 flex items-center justify-center" style={{ perspective: 1200 }}>
         {items.map((event, i) => {
           const style = getCardStyle(i);
-          const img = event.image_url || CARD_IMAGES[i % CARD_IMAGES.length];
+          const fallbackImage = CARD_IMAGES[i % CARD_IMAGES.length];
+          const imageKey = event.id || String(i);
+          const img = event.image_url && !failedImages[imageKey] ? event.image_url : fallbackImage;
           return (
             <motion.div
               key={event.id || i}
@@ -107,6 +110,12 @@ export default function HeroSlider3D({ events }: HeroSlider3DProps) {
                     alt={event.title}
                     className="w-full h-full object-cover"
                     draggable={false}
+                    onError={() => {
+                      setFailedImages((current) => {
+                        if (current[imageKey]) return current;
+                        return { ...current, [imageKey]: true };
+                      });
+                    }}
                   />
                   <div
                     className="absolute inset-0"
