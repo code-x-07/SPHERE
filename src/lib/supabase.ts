@@ -79,8 +79,17 @@ export const BLOCKED_EMAIL_DOMAINS = [
   'mail.com', 'ymail.com', 'msn.com',
 ];
 
+export const enforceInstitutionalEmails = import.meta.env.VITE_ENFORCE_INSTITUTIONAL_EMAILS === 'true';
+
 export function isValidDomain(email: string): boolean {
   const domain = email.split('@')[1]?.toLowerCase();
   if (!domain) return false;
+  if (!enforceInstitutionalEmails) return true;
   return !BLOCKED_EMAIL_DOMAINS.includes(domain);
+}
+
+export function getRoleFromEmail(email: string): UserRole {
+  if (email.startsWith('admin@')) return 'admin';
+  if (email.startsWith('operator@')) return 'operator';
+  return 'student';
 }

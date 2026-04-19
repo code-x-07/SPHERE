@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Hexagon, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react';
-import { supabase, isValidDomain } from '../lib/supabase';
+import { enforceInstitutionalEmails, getRoleFromEmail, supabase, isValidDomain } from '../lib/supabase';
 import { useToastStore } from '../store/useToastStore';
 import MagneticButton from '../components/ui/MagneticButton';
 
@@ -15,6 +15,19 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [domainError, setDomainError] = useState(false);
 
+  async function ensureProfile(userId: string, nextEmail: string, nextFullName: string) {
+    const { error } = await supabase.from('profiles').upsert({
+      id: userId,
+      email: nextEmail,
+      full_name: nextFullName || nextEmail.split('@')[0],
+      role: getRoleFromEmail(nextEmail),
+    });
+
+    if (error) {
+      throw error;
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setDomainError(false);
@@ -24,7 +37,7 @@ export default function Login() {
       addToast({
         type: 'error',
         title: 'Unauthorized Domain',
-        message: 'Only university email addresses are permitted. Public email providers are blocked.',
+        message: 'Only institutional email addresses are permitted for this deployment.',
       });
       return;
     }
@@ -34,43 +47,50 @@ export default function Login() {
       if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
-            if (signUpError) {
-              addToast({ type: 'error', title: 'Login Failed', message: signUpError.message });
-            } else if (signUpData.user) {
-              const role = email.startsWith('admin@') ? 'admin'
-                : email.startsWith('operator@') ? 'operator'
-                : 'student';
-              await supabase.from('profiles').upsert({
-                id: signUpData.user.id,
-                email,
-                full_name: fullName || email.split('@')[0],
-                role,
-              });
-              addToast({ type: 'success', title: 'Account Created!', message: 'Welcome to SPHERE.' });
-            }
+          if (error.message.toLowerCase().includes('email not confirmed')) {
+            addToast({
+              type: 'error',
+              title: 'Email Confirmation Required',
+              message: 'Confirm your email from Supabase first, then sign in.',
+            });
+          } else if (error.message.includes('Invalid login credentials')) {
+            addToast({
+              type: 'error',
+              title: 'Login Failed',
+              message: 'No matching account was found. Create an account first, then sign in.',
+            });
           } else {
             addToast({ type: 'error', title: 'Login Failed', message: error.message });
           }
+        } else {
+          addToast({ type: 'success', title: 'Welcome back', message: 'Signing you into SPHERE.' });
         }
       } else {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+            },
+          },
+        });
         if (error) {
           addToast({ type: 'error', title: 'Sign Up Failed', message: error.message });
+        } else if (data.user && data.session) {
+          await ensureProfile(data.user.id, email, fullName);
+          addToast({ type: 'success', title: 'Account Created', message: 'Welcome to SPHERE.' });
         } else if (data.user) {
-          const role = email.startsWith('admin@') ? 'admin'
-            : email.startsWith('operator@') ? 'operator'
-            : 'student';
-          await supabase.from('profiles').upsert({
-            id: data.user.id,
-            email,
-            full_name: fullName || email.split('@')[0],
-            role,
+          addToast({
+            type: 'success',
+            title: 'Account Created',
+            message: 'Check your email for the confirmation link, then sign in.',
           });
-          addToast({ type: 'success', title: 'Account Created!', message: 'Welcome to SPHERE.' });
         }
       }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Something went wrong while authenticating.';
+      addToast({ type: 'error', title: 'Authentication Error', message });
     } finally {
       setLoading(false);
     }
@@ -160,13 +180,15 @@ export default function Login() {
             </AnimatePresence>
 
             <div>
-              <label className="block text-white/45 text-xs mb-1.5 font-medium">University Email</label>
+              <label className="block text-white/45 text-xs mb-1.5 font-medium">
+                {enforceInstitutionalEmails ? 'University Email' : 'Email'}
+              </label>
               <input
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setDomainError(false); }}
                 required
                 type="email"
-                placeholder="you@university.edu"
+                placeholder={enforceInstitutionalEmails ? 'you@university.edu' : 'you@example.com'}
                 className="w-full bg-transparent text-white text-sm placeholder-white/20 outline-none px-4 py-3 rounded-xl transition-all"
                 style={{
                   background: 'rgba(255,255,255,0.05)',
@@ -183,7 +205,7 @@ export default function Login() {
                     className="flex items-center gap-1.5 mt-2"
                   >
                     <AlertCircle size={12} className="text-red-400" />
-                    <span className="text-red-400 text-xs">Public email providers are not permitted on this platform.</span>
+                    <span className="text-red-400 text-xs">This deployment only accepts institutional email addresses.</span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -228,8 +250,13 @@ export default function Login() {
 
           <div className="mt-5 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <p className="text-white/20 text-xs text-center leading-relaxed">
-              Access restricted to verified university email domains only.
-              <br />Alumni and personal emails are blocked by policy.
+              {enforceInstitutionalEmails
+                ? 'Access restricted to verified university email domains only.'
+                : 'Use your Supabase account to sign in or create a new one here.'}
+              <br />
+              {enforceInstitutionalEmails
+                ? 'Alumni and personal emails are blocked by policy.'
+                : 'If signup does not log you in instantly, confirm your email and then sign in.'}
             </p>
           </div>
         </div>
