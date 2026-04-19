@@ -297,7 +297,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
           )}
         </GlassCard>
 
-        <GlassCard className="flex h-[460px] flex-col overflow-hidden">
+        <GlassCard className="flex min-h-[420px] max-h-[460px] flex-col overflow-hidden xl:max-h-[500px]">
           <div className="flex items-center gap-2 mb-4">
             <Ticket size={16} className="text-sky-300" />
             <p className="text-white font-semibold">My Wallet</p>
@@ -313,11 +313,11 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
               <p className="text-white/40 text-sm mt-2">Reserve any event below and the access code will appear here instantly.</p>
             </div>
           ) : (
-            <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-3">
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2">
               {wallet.map((ticket) => (
                 <div
                   key={ticket.id}
-                  className="rounded-2xl p-4"
+                  className="rounded-2xl p-3"
                   style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -337,7 +337,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                       </span>
                     </div>
                   </div>
-                  <div className="mt-4 grid grid-cols-[108px_1fr] gap-4 items-center">
+                  <div className="mt-3 grid grid-cols-[92px_1fr] gap-3 items-center">
                     <button
                       type="button"
                       onClick={() => setSelectedTicketId(ticket.id)}
@@ -349,17 +349,17 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                         <img
                           src={qrCodes[ticket.id]}
                           alt={`${ticket.events?.title || 'Event'} QR`}
-                          className="w-24 h-24 object-contain"
+                          className="w-20 h-20 object-contain"
                         />
                       ) : (
-                        <div className="w-24 h-24 rounded-xl border border-white/10 animate-pulse" />
+                        <div className="w-20 h-20 rounded-xl border border-white/10 animate-pulse" />
                       )}
                     </button>
                     <div className="min-w-0">
-                      <div className="rounded-xl px-3 py-2 font-mono text-sm text-sky-200 break-all" style={{ background: 'rgba(14,165,233,0.08)' }}>
+                      <div className="rounded-xl px-3 py-2 font-mono text-xs text-sky-200 break-all" style={{ background: 'rgba(14,165,233,0.08)' }}>
                         {ticket.ticket_hash}
                       </div>
-                      <p className="text-white/35 text-xs mt-2">
+                      <p className="text-white/35 text-[11px] mt-2 leading-5">
                         Present this QR at the gate. The operator scanner is locked to this event and validates only this ticket.
                       </p>
                       <button
@@ -378,7 +378,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
         </GlassCard>
       </div>
 
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         {events.map((event) => {
           const claim = claimedTickets.get(event.id);
           const seatsLeft = Math.max(0, event.capacity - event.registered);
@@ -395,102 +395,91 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className={`${isOffset ? 'md:pl-16 lg:pl-28' : 'md:pr-16 lg:pr-28'}`}
+              className={isOffset ? 'xl:translate-y-10' : ''}
             >
-              <GlassCard className="overflow-hidden p-0">
-                <div className="grid gap-0 md:grid-cols-[0.3fr_1fr]">
-                  <div
-                    className="relative flex min-h-[220px] items-end overflow-hidden px-6 py-6 md:px-8"
+              <GlassCard className="overflow-hidden">
+                <div className="relative">
+                  <div className="absolute right-4 top-0 text-[86px] font-black leading-none text-white/[0.05] md:text-[110px]">
+                    {day}
+                  </div>
+
+                  <div className="relative z-[1] flex items-start justify-between gap-4">
+                    <div className="max-w-[75%]">
+                      <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-cyan-200/70">
+                        {month} {day}
+                      </p>
+                      <h3 className="text-2xl font-bold leading-[0.95] text-white md:text-[2rem]">
+                        {event.title}
+                      </h3>
+                    </div>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] uppercase tracking-[0.22em] text-white/45">
+                      Public
+                    </span>
+                  </div>
+
+                  <p
+                    className="mt-4 max-w-2xl text-sm leading-6 text-white/56"
                     style={{
-                      background:
-                        'linear-gradient(180deg, rgba(103,232,249,0.14), rgba(255,255,255,0.02) 55%, rgba(255,255,255,0.01)), radial-gradient(circle at 50% 16%, rgba(103,232,249,0.18), transparent 26%)',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
                     }}
                   >
-                    <div className="absolute -top-4 left-4 text-[120px] font-black leading-none text-white/[0.07] md:text-[160px]">
-                      {day}
+                    {event.description}
+                  </p>
+
+                  <div className="mt-5 grid grid-cols-3 gap-3">
+                    <div className="premium-stat p-3">
+                      <div className="flex items-center gap-2 text-white/38 text-[11px] uppercase tracking-[0.2em]">
+                        <MapPin size={13} className="text-cyan-300" />
+                        Venue
+                      </div>
+                      <p className="mt-2 text-sm font-semibold text-white">{event.venue}</p>
                     </div>
-                    <div className="relative z-[1]">
-                      <p className="text-[11px] uppercase tracking-[0.3em] text-cyan-200/72">{month}</p>
-                      <p className="mt-3 text-sm leading-6 text-white/52">
-                        {eventDate.toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        })}
-                      </p>
+                    <div className="premium-stat p-3">
+                      <div className="flex items-center gap-2 text-white/38 text-[11px] uppercase tracking-[0.2em]">
+                        <Users size={13} className="text-cyan-300" />
+                        Capacity
+                      </div>
+                      <p className="mt-2 text-sm font-semibold text-white">{event.registered}/{event.capacity}</p>
+                    </div>
+                    <div className="premium-stat p-3">
+                      <div className="flex items-center gap-2 text-white/38 text-[11px] uppercase tracking-[0.2em]">
+                        <Calendar size={13} className="text-cyan-300" />
+                        Status
+                      </div>
+                      <p className="mt-2 text-sm font-semibold text-white">{claim ? 'Claimed' : `${seatsLeft} left`}</p>
                     </div>
                   </div>
 
-                  <div className="relative px-6 py-6 md:px-8 md:py-8">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="max-w-2xl">
-                        <p className="text-[11px] uppercase tracking-[0.28em] text-white/28 mb-3">Customer Access Layer</p>
-                        <h3 className="text-3xl font-bold leading-[0.92] text-white md:text-4xl">
-                          {event.title}
-                        </h3>
-                      </div>
-                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] uppercase tracking-[0.22em] text-white/45">
-                        Public
+                  <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        {claim ? 'Ticket already claimed' : soldOut ? 'This release is sold out' : 'Claim one gate pass per event'}
+                      </p>
+                      <p className="mt-2 text-xs text-white/35">
+                        {claim ? `Wallet code: ${claim.ticket_hash}` : 'Your QR pass lands directly in the wallet and stays there.'}
+                      </p>
+                    </div>
+                    <MagneticButton
+                      size="sm"
+                      disabled={walletLoading || Boolean(claim) || soldOut || claimingEventId === event.id}
+                      onClick={() => handleClaim(event.id)}
+                    >
+                      <span className="flex items-center gap-2">
+                        <QrCode size={14} />
+                        {claimingEventId === event.id
+                          ? 'Claiming...'
+                          : walletLoading
+                            ? 'Loading Wallet...'
+                            : claim
+                              ? 'Claimed'
+                              : soldOut
+                                ? 'Sold Out'
+                                : 'Get Free Ticket'}
                       </span>
-                    </div>
-
-                    <p className="mt-5 max-w-2xl text-sm leading-7 text-white/56 md:text-base">
-                      {event.description}
-                    </p>
-
-                    <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        <div className="premium-stat p-4">
-                          <div className="flex items-center gap-2 text-white/38 text-xs uppercase tracking-[0.2em]">
-                            <MapPin size={13} className="text-cyan-300" />
-                            Venue
-                          </div>
-                          <p className="mt-3 text-white font-semibold">{event.venue}</p>
-                        </div>
-                        <div className="premium-stat p-4">
-                          <div className="flex items-center gap-2 text-white/38 text-xs uppercase tracking-[0.2em]">
-                            <Users size={13} className="text-cyan-300" />
-                            Capacity
-                          </div>
-                          <p className="mt-3 text-white font-semibold">{event.registered}/{event.capacity}</p>
-                        </div>
-                        <div className="premium-stat p-4">
-                          <div className="flex items-center gap-2 text-white/38 text-xs uppercase tracking-[0.2em]">
-                            <Calendar size={13} className="text-cyan-300" />
-                            Seats Left
-                          </div>
-                          <p className="mt-3 text-white font-semibold">{claim ? 'Claimed' : seatsLeft}</p>
-                        </div>
-                      </div>
-
-                      <div className="lg:text-right">
-                        <p className="text-white text-sm font-medium">
-                          {claim ? 'Ticket already claimed' : soldOut ? 'This release is sold out' : 'Claim one gate pass per event'}
-                        </p>
-                        <p className="text-white/35 text-xs mt-2 mb-4">
-                          {claim ? `Wallet code: ${claim.ticket_hash}` : 'Your QR pass lands directly in the wallet and stays there.'}
-                        </p>
-                        <MagneticButton
-                          size="sm"
-                          disabled={walletLoading || Boolean(claim) || soldOut || claimingEventId === event.id}
-                          onClick={() => handleClaim(event.id)}
-                        >
-                          <span className="flex items-center gap-2">
-                            <QrCode size={14} />
-                            {claimingEventId === event.id
-                              ? 'Claiming...'
-                              : walletLoading
-                                ? 'Loading Wallet...'
-                                : claim
-                                  ? 'Claimed'
-                                  : soldOut
-                                    ? 'Sold Out'
-                                    : 'Get Free Ticket'}
-                          </span>
-                        </MagneticButton>
-                      </div>
-                    </div>
+                    </MagneticButton>
                   </div>
                 </div>
               </GlassCard>
