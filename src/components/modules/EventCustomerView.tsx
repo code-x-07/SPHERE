@@ -33,6 +33,30 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
   }, [profile?.id]);
 
   useEffect(() => {
+    if (!profile?.id) return;
+
+    const channel = supabase
+      .channel(`sphere-wallet-${profile.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_tickets',
+          filter: `user_id=eq.${profile.id}`,
+        },
+        () => {
+          void fetchWallet();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [profile?.id]);
+
+  useEffect(() => {
     let active = true;
 
     async function generateCodes() {
@@ -191,7 +215,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
           ? `QR generated for ${claimedTicket.ticket_hash}.`
           : 'Your gate pass is ready. Show the QR to the operator at the venue.',
       });
-      await Promise.all([fetchWallet(), onRefresh()]);
+      await onRefresh();
     }
 
     setClaimingEventId(null);
