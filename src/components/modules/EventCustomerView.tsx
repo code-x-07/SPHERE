@@ -124,6 +124,20 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
     [wallet]
   );
   const selectedTicket = wallet.find((ticket) => ticket.id === selectedTicketId) || null;
+  const eventMap = useMemo(
+    () =>
+      new Map(
+        events.map((event) => [
+          event.id,
+          {
+            title: event.title,
+            venue: event.venue,
+            event_date: event.event_date,
+          },
+        ])
+      ),
+    [events]
+  );
 
   async function handleClaim(eventId: string) {
     setClaimingEventId(eventId);
@@ -152,6 +166,24 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
       addToast({ type: 'error', title: 'Ticket Claim Failed', message: payload.error || 'Ticket claim could not be completed.' });
     } else {
       const claimedTicket = payload.ticket as EventTicket | undefined;
+      if (claimedTicket) {
+        setWallet((current) => {
+          const nextTicket: EventTicket = {
+            ...claimedTicket,
+            events: eventMap.get(claimedTicket.event_id) || null,
+            qr_payload: buildTicketQrPayload(claimedTicket.event_id, claimedTicket.ticket_hash),
+          };
+
+          const existingIndex = current.findIndex((ticket) => ticket.id === nextTicket.id);
+          if (existingIndex >= 0) {
+            const updated = [...current];
+            updated[existingIndex] = nextTicket;
+            return updated;
+          }
+
+          return [nextTicket, ...current];
+        });
+      }
       addToast({
         type: 'success',
         title: 'Ticket Added to Wallet',

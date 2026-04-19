@@ -19,12 +19,27 @@ export default function Dashboard({ onOpenScanner }: DashboardProps) {
   const [discoveryMode, setDiscoveryMode] = useState<'events' | 'rooms' | null>(null);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
+
+    const channel = supabase
+      .channel('sphere-events-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'events' },
+        () => {
+          void fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, []);
 
   async function fetchData() {
     const [{ data: evData }] = await Promise.all([
-      supabase.from('events').select('*').order('event_date', { ascending: true }).limit(10),
+      supabase.from('events').select('*').order('event_date', { ascending: true }),
     ]);
     setEvents((evData as Event[]) || []);
     setLoadingEvents(false);
