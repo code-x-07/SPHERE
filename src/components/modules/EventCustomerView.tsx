@@ -185,23 +185,23 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
           )}
         </GlassCard>
 
-        <GlassCard>
+        <GlassCard className="flex h-[460px] flex-col overflow-hidden">
           <div className="flex items-center gap-2 mb-4">
             <Ticket size={16} className="text-sky-300" />
             <p className="text-white font-semibold">My Wallet</p>
           </div>
 
           {walletLoading ? (
-            <div className="py-12 flex items-center justify-center">
+            <div className="flex-1 py-12 flex items-center justify-center">
               <div className="w-5 h-5 rounded-full border-2 border-sky-400 border-t-transparent animate-spin" />
             </div>
           ) : wallet.length === 0 ? (
-            <div className="py-10 text-center">
+            <div className="flex-1 py-10 text-center">
               <p className="text-white font-semibold">No tickets claimed yet</p>
               <p className="text-white/40 text-sm mt-2">Reserve any event below and the access code will appear here instantly.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-3">
               {wallet.map((ticket) => (
                 <div
                   key={ticket.id}
