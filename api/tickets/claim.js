@@ -27,7 +27,7 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: 'eventId is required' });
     }
 
-    const { error: claimError } = await supabase.rpc('claim_event_ticket', {
+    const { data: claimRows, error: claimError } = await supabase.rpc('claim_event_ticket', {
       target_event_id: eventId,
     });
 
@@ -35,18 +35,21 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: claimError.message });
     }
 
-    const { data: ticketRows, error: ticketError } = await supabase
-      .from('event_tickets')
-      .select('id, event_id, user_id, ticket_hash, status, created_at, scanned_at')
-      .eq('event_id', eventId)
-      .eq('user_id', authData.user.id)
-      .limit(1);
-
-    if (ticketError || !ticketRows?.[0]) {
-      return sendJson(res, 500, { error: ticketError?.message || 'Ticket could not be loaded after claim' });
+    const claimedTicket = claimRows?.[0];
+    if (!claimedTicket) {
+      return sendJson(res, 500, { error: 'Ticket could not be loaded after claim' });
     }
 
-    const rawTicket = ticketRows[0];
+    const rawTicket = {
+      id: claimedTicket.ticket_id,
+      event_id: claimedTicket.event_id,
+      user_id: authData.user.id,
+      ticket_hash: claimedTicket.ticket_hash,
+      status: claimedTicket.status,
+      created_at: claimedTicket.created_at,
+      scanned_at: null,
+    };
+
     const { data: eventRow, error: eventError } = await supabase
       .from('events')
       .select('title, venue, event_date')
