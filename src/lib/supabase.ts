@@ -73,19 +73,16 @@ export interface VolunteerApplication {
   applied_at: string;
 }
 
-export const BLOCKED_EMAIL_DOMAINS = [
-  'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com',
-  'live.com', 'icloud.com', 'aol.com', 'protonmail.com',
-  'mail.com', 'ymail.com', 'msn.com',
-];
+export const allowedGoogleDomain = (import.meta.env.VITE_ALLOWED_GOOGLE_DOMAIN as string | undefined)?.toLowerCase() || 'goa.bits-pilani.ac.in';
 
-export const enforceInstitutionalEmails = import.meta.env.VITE_ENFORCE_INSTITUTIONAL_EMAILS === 'true';
+export function getEmailDomain(email: string): string {
+  return email.split('@')[1]?.toLowerCase() || '';
+}
 
 export function isValidDomain(email: string): boolean {
-  const domain = email.split('@')[1]?.toLowerCase();
+  const domain = getEmailDomain(email);
   if (!domain) return false;
-  if (!enforceInstitutionalEmails) return true;
-  return !BLOCKED_EMAIL_DOMAINS.includes(domain);
+  return domain === allowedGoogleDomain;
 }
 
 export function getRoleFromEmail(email: string): UserRole {

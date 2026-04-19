@@ -22,10 +22,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   fetchProfile: async (userId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     const email = user?.email || '';
+    const fullName = user?.user_metadata?.full_name || user?.user_metadata?.name || email.split('@')[0] || 'User';
     const fallbackProfile = user ? {
       id: userId,
       email,
-      full_name: user.user_metadata?.full_name || email.split('@')[0] || 'User',
+      full_name: fullName,
       role: getRoleFromEmail(email),
       avatar_url: '',
       created_at: new Date().toISOString(),
@@ -47,7 +48,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         .upsert({
           id: userId,
           email,
-          full_name: user.user_metadata?.full_name || email.split('@')[0],
+          full_name: fullName,
           role: getRoleFromEmail(email),
         })
         .select()

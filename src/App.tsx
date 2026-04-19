@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { supabase } from './lib/supabase';
+import { allowedGoogleDomain, isValidDomain, supabase } from './lib/supabase';
 import { useAuthStore } from './store/useAuthStore';
+import { useToastStore } from './store/useToastStore';
 import { useTimeStore } from './store/useTimeStore';
 import AmbientBackground from './components/3d/AmbientBackground';
 import NavBar from './components/ui/NavBar';
@@ -49,16 +50,33 @@ function LoadingScreen() {
 
 export default function App() {
   const { profile, loading, initialized, setLoading, fetchProfile } = useAuthStore();
+  const { addToast } = useToastStore();
   const { syncTime } = useTimeStore();
   const [currentPage, setCurrentPage] = useState('discovery');
 
   useEffect(() => {
     syncTime();
 
+    const handleAuthorizedSession = async (email: string | undefined, userId: string) => {
+      if (!email || !isValidDomain(email)) {
+        await supabase.auth.signOut();
+        setLoading(false);
+        useAuthStore.setState({ profile: null, initialized: true });
+        addToast({
+          type: 'error',
+          title: 'BITS Goa Account Required',
+          message: `Please sign in with your @${allowedGoogleDomain} Google account.`,
+        });
+        return;
+      }
+
+      await fetchProfile(userId);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       (async () => {
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          await handleAuthorizedSession(session.user.email, session.user.id);
         } else {
           setLoading(false);
           useAuthStore.setState({ profile: null, initialized: true });
@@ -68,7 +86,7 @@ export default function App() {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        fetchProfile(session.user.id);
+        handleAuthorizedSession(session.user.email, session.user.id);
       } else {
         setLoading(false);
         useAuthStore.setState({ initialized: true });
@@ -76,7 +94,7 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [addToast, fetchProfile, setLoading, syncTime]);
 
   useEffect(() => {
     if (profile) {

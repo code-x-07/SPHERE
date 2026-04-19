@@ -1,96 +1,44 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Hexagon, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react';
-import { enforceInstitutionalEmails, getRoleFromEmail, supabase, isValidDomain } from '../lib/supabase';
-import { useToastStore } from '../store/useToastStore';
+import { motion } from 'framer-motion';
+import { ArrowRight, Hexagon } from 'lucide-react';
 import MagneticButton from '../components/ui/MagneticButton';
+import { allowedGoogleDomain, supabase } from '../lib/supabase';
+import { useToastStore } from '../store/useToastStore';
+
+function GoogleMark() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.2-1.8 2.9l3 2.3c1.8-1.7 2.8-4.1 2.8-6.9 0-.7-.1-1.4-.2-2H12Z" />
+      <path fill="#34A853" d="M12 21.5c2.6 0 4.7-.8 6.3-2.2l-3-2.3c-.8.5-1.9.9-3.3.9-2.5 0-4.7-1.7-5.5-4l-3.1 2.4c1.6 3.1 4.8 5.2 8.6 5.2Z" />
+      <path fill="#4A90E2" d="M6.5 13.9c-.2-.5-.3-1.2-.3-1.9s.1-1.3.3-1.9l-3.1-2.4A9.5 9.5 0 0 0 2.4 12c0 1.5.4 2.9 1 4.2l3.1-2.3Z" />
+      <path fill="#FBBC05" d="M12 6.1c1.4 0 2.6.5 3.6 1.4l2.7-2.7C16.7 3.3 14.6 2.5 12 2.5c-3.8 0-7 2.1-8.6 5.2l3.1 2.4c.8-2.4 3-4 5.5-4Z" />
+    </svg>
+  );
+}
 
 export default function Login() {
   const { addToast } = useToastStore();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [domainError, setDomainError] = useState(false);
 
-  async function ensureProfile(userId: string, nextEmail: string, nextFullName: string) {
-    const { error } = await supabase.from('profiles').upsert({
-      id: userId,
-      email: nextEmail,
-      full_name: nextFullName || nextEmail.split('@')[0],
-      role: getRoleFromEmail(nextEmail),
-    });
-
-    if (error) {
-      throw error;
-    }
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setDomainError(false);
-
-    if (!isValidDomain(email)) {
-      setDomainError(true);
-      addToast({
-        type: 'error',
-        title: 'Unauthorized Domain',
-        message: 'Only institutional email addresses are permitted for this deployment.',
-      });
-      return;
-    }
-
+  async function handleGoogleSignIn() {
     setLoading(true);
+
     try {
-      if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          if (error.message.toLowerCase().includes('email not confirmed')) {
-            addToast({
-              type: 'error',
-              title: 'Email Confirmation Required',
-              message: 'Confirm your email from Supabase first, then sign in.',
-            });
-          } else if (error.message.includes('Invalid login credentials')) {
-            addToast({
-              type: 'error',
-              title: 'Login Failed',
-              message: 'No matching account was found. Create an account first, then sign in.',
-            });
-          } else {
-            addToast({ type: 'error', title: 'Login Failed', message: error.message });
-          }
-        } else {
-          addToast({ type: 'success', title: 'Welcome back', message: 'Signing you into SPHERE.' });
-        }
-      } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-            },
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          scopes: 'email profile',
+          queryParams: {
+            hd: allowedGoogleDomain,
+            prompt: 'select_account',
           },
-        });
-        if (error) {
-          addToast({ type: 'error', title: 'Sign Up Failed', message: error.message });
-        } else if (data.user && data.session) {
-          await ensureProfile(data.user.id, email, fullName);
-          addToast({ type: 'success', title: 'Account Created', message: 'Welcome to SPHERE.' });
-        } else if (data.user) {
-          addToast({
-            type: 'success',
-            title: 'Account Created',
-            message: 'Check your email for the confirmation link, then sign in.',
-          });
-        }
+        },
+      });
+
+      if (error) {
+        addToast({ type: 'error', title: 'Google Sign-In Failed', message: error.message });
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Something went wrong while authenticating.';
-      addToast({ type: 'error', title: 'Authentication Error', message });
     } finally {
       setLoading(false);
     }
@@ -114,10 +62,7 @@ export default function Login() {
           >
             <Hexagon size={28} className="text-white" fill="white" />
           </motion.div>
-          <h1
-            className="text-white text-3xl font-bold"
-            style={{ letterSpacing: '-0.03em' }}
-          >
+          <h1 className="text-white text-3xl font-bold" style={{ letterSpacing: '-0.03em' }}>
             SPHERE
           </h1>
           <p className="text-white/40 text-sm mt-1">Campus Event & Space Platform</p>
@@ -132,151 +77,30 @@ export default function Login() {
             boxShadow: '0 40px 80px rgba(0,0,0,0.6)',
           }}
         >
-          <div
-            className="flex rounded-xl p-1 mb-6"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-          >
-            {(['login', 'signup'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setDomainError(false); }}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold transition-all duration-300 relative"
-                style={{
-                  color: mode === m ? '#fff' : 'rgba(255,255,255,0.35)',
-                }}
-              >
-                {mode === m && (
-                  <motion.div
-                    layoutId="tab-bg"
-                    className="absolute inset-0 rounded-lg"
-                    style={{ background: 'rgba(14,165,233,0.2)', border: '1px solid rgba(14,165,233,0.3)' }}
-                  />
-                )}
-                <span className="relative z-10 capitalize">{m === 'signup' ? 'Create Account' : 'Sign In'}</span>
-              </button>
-            ))}
+          <div className="text-center mb-6">
+            <p className="text-white text-xl font-semibold">Sign in with BITS Google</p>
+            <p className="text-white/40 text-sm mt-2 leading-relaxed">
+              Access is limited to students and staff using
+              <br />
+              <span className="text-sky-300 font-medium">@{allowedGoogleDomain}</span>
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <AnimatePresence>
-              {mode === 'signup' && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  <label className="block text-white/45 text-xs mb-1.5 font-medium">Full Name</label>
-                  <input
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    placeholder="Jane Doe"
-                    className="w-full bg-transparent text-white text-sm placeholder-white/20 outline-none px-4 py-3 rounded-xl"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div>
-              <label className="block text-white/45 text-xs mb-1.5 font-medium">
-                {enforceInstitutionalEmails ? 'University Email' : 'Email'}
-              </label>
-              <input
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setDomainError(false); }}
-                required
-                type="email"
-                placeholder={enforceInstitutionalEmails ? 'you@university.edu' : 'you@example.com'}
-                className="w-full bg-transparent text-white text-sm placeholder-white/20 outline-none px-4 py-3 rounded-xl transition-all"
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${domainError ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                  boxShadow: domainError ? '0 0 0 3px rgba(239,68,68,0.1)' : 'none',
-                }}
-              />
-              <AnimatePresence>
-                {domainError && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0, y: -4 }}
-                    animate={{ opacity: 1, height: 'auto', y: 0 }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-1.5 mt-2"
-                  >
-                    <AlertCircle size={12} className="text-red-400" />
-                    <span className="text-red-400 text-xs">This deployment only accepts institutional email addresses.</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div>
-              <label className="block text-white/45 text-xs mb-1.5 font-medium">Password</label>
-              <div className="relative">
-                <input
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  minLength={6}
-                  className="w-full bg-transparent text-white text-sm placeholder-white/20 outline-none px-4 py-3 pr-12 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-                >
-                  {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-            </div>
-
-            <MagneticButton type="submit" disabled={loading} size="lg" className="w-full justify-center mt-2">
-              <span className="flex items-center gap-2">
-                {loading ? (
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-                    <ArrowRight size={16} />
-                  </motion.div>
-                ) : (
-                  <ArrowRight size={16} />
-                )}
-                {mode === 'login' ? 'Sign In to SPHERE' : 'Create Account'}
-              </span>
-            </MagneticButton>
-          </form>
+          <MagneticButton type="button" disabled={loading} size="lg" className="w-full justify-center" onClick={handleGoogleSignIn}>
+            <span className="flex items-center gap-3">
+              <GoogleMark />
+              {loading ? 'Redirecting to Google...' : 'Continue With Google'}
+              {!loading && <ArrowRight size={16} />}
+            </span>
+          </MagneticButton>
 
           <div className="mt-5 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <p className="text-white/20 text-xs text-center leading-relaxed">
-              {enforceInstitutionalEmails
-                ? 'Access restricted to verified university email domains only.'
-                : 'Use your Supabase account to sign in or create a new one here.'}
+              If Google sign-in opens but access is denied, enable the Google provider in Supabase
               <br />
-              {enforceInstitutionalEmails
-                ? 'Alumni and personal emails are blocked by policy.'
-                : 'If signup does not log you in instantly, confirm your email and then sign in.'}
+              and add this site to Supabase Auth redirect URLs.
             </p>
           </div>
-        </div>
-
-        <div className="flex gap-3 mt-4">
-          {[
-            { label: 'Demo Student', email: 'student@university.edu', pass: 'demo1234' },
-            { label: 'Demo Admin', email: 'admin@university.edu', pass: 'demo1234' },
-            { label: 'Demo Operator', email: 'operator@university.edu', pass: 'demo1234' },
-          ].map((demo) => (
-            <motion.button
-              key={demo.label}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { setEmail(demo.email); setPassword(demo.pass); setMode('login'); }}
-              className="flex-1 py-2 rounded-lg text-[10px] font-medium text-white/30 hover:text-white/60 transition-colors"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              {demo.label}
-            </motion.button>
-          ))}
         </div>
       </motion.div>
     </div>
