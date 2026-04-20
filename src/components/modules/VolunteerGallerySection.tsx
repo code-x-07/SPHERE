@@ -212,18 +212,14 @@ export default function VolunteerGallerySection() {
 
             <h2 className="volunteer-gallery-title">A living photo wall for campus moments</h2>
             <p className="volunteer-gallery-text">
-              Upload event frames, drag through the spread, and let the gallery behave like a
-              tactile stack instead of another flat slider.
+              Upload event frames and let the gallery behave like a tactile stack instead of
+              another flat slider.
             </p>
 
             <div className="volunteer-gallery-metrics">
               <div className="premium-stat volunteer-gallery-stat">
                 <span>Photos</span>
                 <strong>{photos.length > 0 ? photos.length : FALLBACK_IMAGES.length}</strong>
-              </div>
-              <div className="premium-stat volunteer-gallery-stat">
-                <span>Input</span>
-                <strong>Wheel, drag, swipe</strong>
               </div>
             </div>
 

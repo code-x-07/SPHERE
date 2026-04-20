@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase, type Booking, type Room } from '../../lib/supabase';
 import {
-  REFERENCE_ROOMS,
   areAllReferenceRoomsSeeded,
   buildReferenceRoomsView,
-  normalizeRoomName,
 } from '../../lib/roomBooking';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
@@ -48,43 +46,6 @@ export default function RoomBookingDiscovery() {
     return STUDENT_TABS;
   }, [profile?.role]);
 
-  async function seedReferenceRoomsIfNeeded(existingRooms: Room[]) {
-    if (profile?.role !== 'admin') return false;
-
-    const existingNames = new Set(existingRooms.map((room) => normalizeRoomName(room.name)));
-    const missingRooms = REFERENCE_ROOMS.filter(
-      (room) => !existingNames.has(normalizeRoomName(room.name))
-    );
-
-    if (missingRooms.length === 0) {
-      return false;
-    }
-
-    const { error } = await supabase.from('rooms').insert(
-      missingRooms.map((room) => ({
-        ...room,
-        available: true,
-      }))
-    );
-
-    if (error) {
-      addToast({
-        type: 'error',
-        title: 'Reference rooms could not be added',
-        message: error.message,
-      });
-      return false;
-    }
-
-    addToast({
-      type: 'success',
-      title: 'Reference rooms loaded',
-      message: `${missingRooms.length} room${missingRooms.length === 1 ? '' : 's'} synced to Supabase.`,
-    });
-
-    return true;
-  }
-
   async function fetchRoomData() {
     setLoadingRooms(true);
 
@@ -108,14 +69,7 @@ export default function RoomBookingDiscovery() {
       adminBookingQuery,
     ]);
 
-    let resolvedDatabaseRooms = (roomResponse.data as Room[]) || [];
-    const seeded = await seedReferenceRoomsIfNeeded(resolvedDatabaseRooms);
-
-    if (seeded) {
-      const { data: reseededRooms } = await supabase.from('rooms').select('*').order('name');
-      resolvedDatabaseRooms = (reseededRooms as Room[]) || [];
-    }
-
+    const resolvedDatabaseRooms = (roomResponse.data as Room[]) || [];
     const resolvedVisibleRooms = buildReferenceRoomsView(resolvedDatabaseRooms);
     const templateOnly = !areAllReferenceRoomsSeeded(resolvedDatabaseRooms);
 

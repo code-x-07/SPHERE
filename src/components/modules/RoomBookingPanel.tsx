@@ -100,9 +100,7 @@ export default function RoomBookingPanel({
     event.preventDefault();
 
     if (templateOnly) {
-      setError(
-        'These reference rooms are not in Supabase yet. Run the seed SQL first, then booking will work normally.'
-      );
+      setError('Booking is unavailable for this room right now.');
       return;
     }
 
@@ -158,13 +156,6 @@ export default function RoomBookingPanel({
       <div className="booking-form-card">
         <h2>Book {room.name}</h2>
         <p className="room-info">📍 {room.location || 'Location TBA'}</p>
-
-        {templateOnly && (
-          <div className="info-message">
-            Reference preview mode is active. Run the seed SQL to make this room live in
-            Supabase.
-          </div>
-        )}
 
         {error && <div className="error-message">{error}</div>}
 

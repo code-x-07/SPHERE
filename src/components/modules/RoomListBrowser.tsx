@@ -134,13 +134,6 @@ export default function RoomListBrowser({
         </p>
       </div>
 
-      {templateOnly && (
-        <div className="info-message">
-          Reference rooms are visible, but some are not in Supabase yet. Run the seed SQL once to
-          make every room fully bookable.
-        </div>
-      )}
-
       <div className="room-filters">
         <div className="filters-heading">
           <div>
