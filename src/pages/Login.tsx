@@ -120,58 +120,73 @@ export default function Login() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, rotate: -3 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          transition={{ duration: 0.95, ease: [0.16, 1, 0.3, 1] }}
-          className="relative min-h-[620px]"
+          initial={{ opacity: 0, scale: 0.98, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          className="relative"
         >
-          <div className="absolute inset-x-6 top-0 bottom-0 rounded-[42px] border border-white/8 bg-white/[0.03] backdrop-blur-2xl" />
-          <div className="absolute inset-[22px] overflow-hidden rounded-[38px] border border-white/8">
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `linear-gradient(180deg, rgba(12,12,13,0.12), rgba(12,12,13,0.72)), linear-gradient(135deg, rgba(220,196,163,0.08), transparent 40%), url(${CAMPUS_IMAGE})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}
-            />
-          </div>
+          <div className="rounded-[40px] border border-white/8 bg-white/[0.03] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
+            <div className="overflow-hidden rounded-[34px] border border-white/8">
+              <div
+                className="relative min-h-[320px] md:min-h-[380px]"
+                style={{
+                  backgroundImage: `linear-gradient(180deg, rgba(12,12,13,0.1), rgba(12,12,13,0.68)), linear-gradient(135deg, rgba(220,196,163,0.08), transparent 42%), url(${CAMPUS_IMAGE})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                <div className="absolute inset-x-6 top-6 flex items-start justify-between gap-4">
+                  <div className="rounded-full border border-white/12 bg-[#171314]/55 px-4 py-2 backdrop-blur-xl">
+                    <p className="text-[10px] uppercase tracking-[0.26em] text-white/48">BITS Goa</p>
+                  </div>
+                  <div className="rounded-full border border-white/12 bg-[#171314]/55 px-4 py-2 backdrop-blur-xl">
+                    <p className="text-[10px] uppercase tracking-[0.26em] text-white/48">Student access</p>
+                  </div>
+                </div>
 
-          <div className="absolute right-0 top-8 z-10 max-w-[230px] rounded-[28px] border border-white/10 bg-[#151313]/40 px-5 py-4 backdrop-blur-2xl">
-            <p className="text-[11px] uppercase tracking-[0.24em] text-white/38">Google access</p>
-            <p className="mt-3 text-sm leading-6 text-white/66">
-              Only students and staff using the BITS Goa domain can enter this platform.
-            </p>
-          </div>
-
-          <div className="absolute left-0 bottom-10 z-10 max-w-[260px] rounded-[28px] border border-white/10 bg-[#151313]/40 px-5 py-4 backdrop-blur-2xl">
-            <p className="text-[11px] uppercase tracking-[0.24em] text-[#dcc4a3]">Real campus tone</p>
-            <p className="mt-3 text-sm leading-6 text-white/66">
-              No floating orb, no tech-demo gimmick. Just a clearer product anchored in a real campus.
-            </p>
-          </div>
-
-          <div className="absolute inset-x-12 bottom-8 z-20 rounded-[34px] border border-white/10 bg-slate-950/42 p-6 backdrop-blur-2xl">
-            <div className="mb-6">
-              <p className="text-white text-2xl font-semibold">Continue with BITS Google</p>
-              <p className="text-white/45 text-sm mt-2 leading-relaxed">
-                Access is reserved for students and staff using <span style={{ color: '#dcc4a3' }} className="font-medium">@{allowedGoogleDomain}</span>.
-              </p>
+                <div className="absolute inset-x-6 bottom-6">
+                  <div className="max-w-[320px] rounded-[28px] border border-white/12 bg-[#171314]/64 px-5 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
+                    <p className="text-white text-lg font-semibold">BITS Pilani, Goa Campus</p>
+                    <p className="mt-2 text-sm leading-6 text-white/56">
+                      One place for events, rooms, and campus workflows.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <MagneticButton type="button" disabled={loading} size="lg" className="w-full justify-center" onClick={handleGoogleSignIn}>
-              <span className="flex items-center gap-3">
-                <GoogleMark />
-                {loading ? 'Redirecting to Google...' : 'Continue With Google'}
-                {!loading && <ArrowRight size={16} />}
-              </span>
-            </MagneticButton>
+            <div className="mt-5 rounded-[30px] border border-white/10 bg-[#121111]/68 p-6 backdrop-blur-2xl">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-white text-2xl font-semibold">Continue with BITS Google</p>
+                  <p className="text-white/45 text-sm mt-2 leading-relaxed">
+                    Access is reserved for students and staff using <span style={{ color: '#dcc4a3' }} className="font-medium">@{allowedGoogleDomain}</span>.
+                  </p>
+                </div>
+                <div className="hidden rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 md:block">
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-white/34">Sign-in</p>
+                  <p className="mt-1 text-sm text-white/64">Google OAuth</p>
+                </div>
+              </div>
 
-            <div className="mt-5 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-white/22 text-xs leading-relaxed">
-                If Google sign-in opens but access is denied, enable the Google provider in Supabase and
-                add this site to the allowed auth redirect URLs.
-              </p>
+              <MagneticButton type="button" disabled={loading} size="lg" className="w-full justify-center" onClick={handleGoogleSignIn}>
+                <span className="flex items-center gap-3">
+                  <GoogleMark />
+                  {loading ? 'Redirecting to Google...' : 'Continue With Google'}
+                  {!loading && <ArrowRight size={16} />}
+                </span>
+              </MagneticButton>
+
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <div className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-white/32">Access</p>
+                  <p className="mt-2 text-sm text-white/62">Only the BITS Goa domain can enter this platform.</p>
+                </div>
+                <div className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-white/32">Support</p>
+                  <p className="mt-2 text-sm text-white/62">If login fails, verify Google auth is enabled in Supabase.</p>
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
