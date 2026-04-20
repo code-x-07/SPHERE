@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Hexagon, MapPin, Sparkles } from 'lucide-react';
+import { ArrowRight, Hexagon } from 'lucide-react';
 import MagneticButton from '../components/ui/MagneticButton';
 import { allowedGoogleDomain, supabase } from '../lib/supabase';
 import { useToastStore } from '../store/useToastStore';
 import GrainOverlay from '../components/core/GrainOverlay';
-import RevealChars from '../components/motion/RevealChars';
 import { CAMPUS_IMAGE } from '../lib/campusVisuals';
 
 function GoogleMark() {
@@ -65,11 +64,6 @@ export default function Login() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="max-w-3xl"
         >
-          <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-xl">
-            <Sparkles size={14} className="text-[#dcc4a3]" />
-            <span className="text-[11px] uppercase tracking-[0.28em] text-white/74">BITS Goa student access</span>
-          </div>
-
           <div className="space-y-5">
             <div className="flex items-center gap-3">
               <div
@@ -82,39 +76,6 @@ export default function Login() {
                 <p className="text-white text-2xl font-bold">SPHERE</p>
                 <p className="text-white/35 text-sm">Campus events and spaces, made for BITS Goa</p>
               </div>
-            </div>
-
-            <h1 className="max-w-4xl text-5xl font-bold leading-[0.9] text-white md:text-7xl">
-              <RevealChars text="A better front door" />
-              <br />
-              <span style={{ color: '#dcc4a3' }}>
-                <RevealChars text="for campus life." delay={0.12} />
-              </span>
-            </h1>
-
-            <p className="max-w-2xl text-base leading-8 text-white/62 md:text-lg">
-              Sign in with your BITS Goa Google account to browse events, claim gate passes,
-              access operator mode, and move into room booking without jumping across tools.
-            </p>
-          </div>
-
-          <div className="mt-10 grid max-w-2xl gap-4 sm:grid-cols-2">
-            <div className="premium-stat p-5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#dcc4a3]/16 bg-[#dcc4a3]/10">
-                  <MapPin size={16} className="text-[#e6d3ba]" />
-                </div>
-                <div>
-                  <p className="text-white text-sm font-semibold">BITS-only access</p>
-                  <p className="text-white/45 text-xs mt-1">Restricted to @{allowedGoogleDomain}</p>
-                </div>
-              </div>
-            </div>
-            <div className="premium-stat p-5">
-              <p className="text-white/30 text-[11px] uppercase tracking-[0.26em]">What opens after login</p>
-              <p className="mt-3 text-white/72 text-sm leading-6">
-                Event passes, operator scanning, volunteer workflows, and room booking in one flow.
-              </p>
             </div>
           </div>
         </motion.div>
