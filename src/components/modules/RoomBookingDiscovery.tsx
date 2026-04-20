@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Building2, ClipboardList, ShieldCheck } from 'lucide-react';
 import { supabase, type Booking, type Room } from '../../lib/supabase';
+import { REFERENCE_ROOMS } from '../../lib/roomBooking';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import RoomAdminPanel from './RoomAdminPanel';
@@ -37,6 +38,45 @@ export default function RoomBookingDiscovery() {
     [profile?.role]
   );
 
+  async function seedReferenceRoomsIfNeeded(existingRooms: Room[]) {
+    if (profile?.role !== 'admin') return false;
+
+    const existingNames = new Set(
+      existingRooms.map((room) => room.name.trim().toLowerCase())
+    );
+
+    const missingRooms = REFERENCE_ROOMS.filter(
+      (room) => !existingNames.has(room.name.trim().toLowerCase())
+    );
+
+    if (missingRooms.length === 0) {
+      return false;
+    }
+
+    const { error } = await supabase.from('rooms').insert(
+      missingRooms.map((room) => ({
+        ...room,
+        available: true,
+      }))
+    );
+
+    if (!error) {
+      addToast({
+        type: 'success',
+        title: 'Reference rooms loaded',
+        message: `${missingRooms.length} room${missingRooms.length === 1 ? '' : 's'} added from the room-booking template.`,
+      });
+      return true;
+    }
+
+    addToast({
+      type: 'error',
+      title: 'Room seeding failed',
+      message: error.message,
+    });
+    return false;
+  }
+
   async function fetchRoomData() {
     setLoadingRooms(true);
 
@@ -60,7 +100,14 @@ export default function RoomBookingDiscovery() {
       adminBookingQuery,
     ]);
 
-    const resolvedRooms = (roomResponse.data as Room[]) || [];
+    let resolvedRooms = (roomResponse.data as Room[]) || [];
+    const seeded = await seedReferenceRoomsIfNeeded(resolvedRooms);
+
+    if (seeded) {
+      const { data: reseededRooms } = await supabase.from('rooms').select('*').order('name');
+      resolvedRooms = (reseededRooms as Room[]) || [];
+    }
+
     const roomById = new Map(resolvedRooms.map((room) => [room.id, room]));
 
     const resolvedMyBookings = ((bookingResponse.data as Booking[]) || []).map((booking) => ({

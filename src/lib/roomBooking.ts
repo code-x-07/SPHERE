@@ -6,6 +6,46 @@ export const BOOKING_HOURS = Array.from(
   (_, index) => BOOKING_START_HOUR + index
 );
 
+export interface ReferenceRoomSeed {
+  name: string;
+  capacity: number;
+  location: string;
+  amenities: string[];
+}
+
+export const REFERENCE_ROOMS: ReferenceRoomSeed[] = [
+  {
+    name: 'Conference Room A',
+    capacity: 20,
+    location: 'Building A - Floor 2',
+    amenities: ['Projector', 'Whiteboard', 'TV'],
+  },
+  {
+    name: 'Study Room B',
+    capacity: 6,
+    location: 'Library - Ground Floor',
+    amenities: ['Whiteboard', 'WiFi', 'Power Outlets'],
+  },
+  {
+    name: 'Lab Room C',
+    capacity: 30,
+    location: 'Science Building - Floor 3',
+    amenities: ['Projector', 'Computers', 'Air Conditioning'],
+  },
+  {
+    name: 'Seminar Hall D',
+    capacity: 50,
+    location: 'Main Hall - Ground Floor',
+    amenities: ['Stage', 'Projector', 'Sound System'],
+  },
+  {
+    name: 'Meeting Room E',
+    capacity: 10,
+    location: 'Admin Building - Floor 1',
+    amenities: ['Conference Phone', 'Whiteboard', 'TV'],
+  },
+];
+
 export function formatHour(hour: number) {
   return `${String(hour).padStart(2, '0')}:00`;
 }
