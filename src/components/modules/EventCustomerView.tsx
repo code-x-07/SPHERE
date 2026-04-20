@@ -283,10 +283,10 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
         <GlassCard className="overflow-hidden">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-white text-lg font-semibold">Customer Discovery</p>
-              <p className="text-white/40 text-sm mt-1">Explore campus events and reserve your entry pass.</p>
+              <p className="text-white text-lg font-semibold">Upcoming Events</p>
+              <p className="text-white/40 text-sm mt-1">Choose an event, claim your pass, and keep it in your wallet.</p>
             </div>
-            <span className="text-white/25 text-xs uppercase tracking-[0.22em]">Events</span>
+            <span className="text-white/25 text-xs uppercase tracking-[0.22em]">Campus</span>
           </div>
           {loading ? (
             <div className="h-[460px] flex items-center justify-center">
@@ -299,8 +299,8 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
 
         <GlassCard className="flex min-h-[420px] max-h-[460px] flex-col overflow-hidden xl:max-h-[500px]">
           <div className="flex items-center gap-2 mb-4">
-            <Ticket size={16} className="text-sky-300" />
-            <p className="text-white font-semibold">My Wallet</p>
+            <Ticket size={16} style={{ color: '#dcc4a3' }} />
+            <p className="text-white font-semibold">Your Passes</p>
           </div>
 
           {walletLoading ? (
@@ -328,11 +328,11 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                     <div className="text-right">
                       <span
                         className="block text-[10px] uppercase tracking-[0.22em]"
-                        style={{ color: ticket.status === 'used' ? '#fbbf24' : '#34d399' }}
+                        style={{ color: ticket.status === 'used' ? '#fbbf24' : '#d9c29f' }}
                       >
                         {ticket.status}
                       </span>
-                      <span className="block text-[10px] uppercase tracking-[0.22em] text-sky-300 mt-1">
+                      <span className="block mt-1 text-[10px] uppercase tracking-[0.22em]" style={{ color: '#8ea07d' }}>
                         Free
                       </span>
                     </div>
@@ -356,7 +356,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                       )}
                     </button>
                     <div className="min-w-0">
-                      <div className="rounded-xl px-3 py-2 font-mono text-xs text-sky-200 break-all" style={{ background: 'rgba(14,165,233,0.08)' }}>
+                      <div className="rounded-xl px-3 py-2 font-mono text-xs break-all" style={{ background: 'rgba(220,196,163,0.08)', color: '#e6d3ba' }}>
                         {ticket.ticket_hash}
                       </div>
                       <p className="text-white/35 text-[11px] mt-2 leading-5">
@@ -365,7 +365,8 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                       <button
                         type="button"
                         onClick={() => setSelectedTicketId(ticket.id)}
-                        className="text-sky-300 text-xs font-medium mt-2"
+                        className="mt-2 text-xs font-medium"
+                        style={{ color: '#dcc4a3' }}
                       >
                         Open full-screen QR
                       </button>
@@ -405,7 +406,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
 
                   <div className="relative z-[1] flex items-start justify-between gap-4">
                     <div className="max-w-[75%]">
-                      <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-cyan-200/70">
+                      <p className="mb-3 text-[11px] uppercase tracking-[0.28em]" style={{ color: '#dcc4a3' }}>
                         {month} {day}
                       </p>
                       <h3 className="text-2xl font-bold leading-[0.95] text-white md:text-[2rem]">
@@ -413,7 +414,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                       </h3>
                     </div>
                     <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] uppercase tracking-[0.22em] text-white/45">
-                      Public
+                      Open Event
                     </span>
                   </div>
 
@@ -432,21 +433,21 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                   <div className="mt-5 grid grid-cols-3 gap-3">
                     <div className="premium-stat p-3">
                       <div className="flex items-center gap-2 text-white/38 text-[11px] uppercase tracking-[0.2em]">
-                        <MapPin size={13} className="text-cyan-300" />
+                        <MapPin size={13} style={{ color: '#dcc4a3' }} />
                         Venue
                       </div>
                       <p className="mt-2 text-sm font-semibold text-white">{event.venue}</p>
                     </div>
                     <div className="premium-stat p-3">
                       <div className="flex items-center gap-2 text-white/38 text-[11px] uppercase tracking-[0.2em]">
-                        <Users size={13} className="text-cyan-300" />
+                        <Users size={13} style={{ color: '#dcc4a3' }} />
                         Capacity
                       </div>
                       <p className="mt-2 text-sm font-semibold text-white">{event.registered}/{event.capacity}</p>
                     </div>
                     <div className="premium-stat p-3">
                       <div className="flex items-center gap-2 text-white/38 text-[11px] uppercase tracking-[0.2em]">
-                        <Calendar size={13} className="text-cyan-300" />
+                        <Calendar size={13} style={{ color: '#dcc4a3' }} />
                         Status
                       </div>
                       <p className="mt-2 text-sm font-semibold text-white">{claim ? 'Claimed' : `${seatsLeft} left`}</p>
@@ -456,10 +457,10 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                   <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                     <div>
                       <p className="text-sm font-medium text-white">
-                        {claim ? 'Ticket already claimed' : soldOut ? 'This release is sold out' : 'Claim one gate pass per event'}
+                        {claim ? 'Pass already claimed' : soldOut ? 'This event is full' : 'Claim one free pass for this event'}
                       </p>
                       <p className="mt-2 text-xs text-white/35">
-                        {claim ? `Wallet code: ${claim.ticket_hash}` : 'Your QR pass lands directly in the wallet and stays there.'}
+                        {claim ? `Pass code: ${claim.ticket_hash}` : 'Once claimed, the QR pass stays in your wallet until it is used.'}
                       </p>
                     </div>
                     <MagneticButton
@@ -540,9 +541,9 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                 )}
               </div>
 
-              <div className="mt-5 rounded-2xl px-4 py-3" style={{ background: 'rgba(14,165,233,0.08)' }}>
+              <div className="mt-5 rounded-2xl px-4 py-3" style={{ background: 'rgba(220,196,163,0.08)' }}>
                 <p className="text-white/35 text-xs uppercase tracking-[0.2em]">Ticket Hash</p>
-                <p className="text-sky-200 font-mono text-base mt-2 break-all">{selectedTicket.ticket_hash}</p>
+                <p className="mt-2 break-all font-mono text-base" style={{ color: '#e6d3ba' }}>{selectedTicket.ticket_hash}</p>
               </div>
 
               <p className="text-white/45 text-sm mt-4 leading-relaxed">

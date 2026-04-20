@@ -29,9 +29,9 @@ export default function NavBar({ currentPage, onNavigate }: NavBarProps) {
       <div
         className="mx-auto flex max-w-7xl items-center justify-between rounded-[26px] px-4 py-3 md:px-6"
         style={{
-          background: 'linear-gradient(180deg, rgba(10,15,28,0.84), rgba(8,12,24,0.72))',
+          background: 'linear-gradient(180deg, rgba(26,22,21,0.82), rgba(15,15,16,0.74))',
           backdropFilter: 'blur(22px)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,248,240,0.08)',
           boxShadow: 'var(--shadow-deep)',
         }}
       >
@@ -41,7 +41,7 @@ export default function NavBar({ currentPage, onNavigate }: NavBarProps) {
         >
           <div
             className="flex h-10 w-10 items-center justify-center rounded-2xl"
-            style={{ background: 'linear-gradient(135deg, #67e8f9, #2563eb)', boxShadow: '0 14px 30px rgba(37,99,235,0.28)' }}
+            style={{ background: 'linear-gradient(135deg, #e4c7a0, #b46f51)', boxShadow: '0 14px 30px rgba(180,111,81,0.24)' }}
           >
             <Hexagon size={18} className="text-white" fill="white" />
           </div>
@@ -53,7 +53,7 @@ export default function NavBar({ currentPage, onNavigate }: NavBarProps) {
               SPHERE
             </span>
             <span className="hidden text-[11px] uppercase tracking-[0.22em] text-white/30 md:block">
-              Campus Discovery Layer
+              BITS Goa Campus Platform
             </span>
           </div>
         </button>
@@ -69,9 +69,9 @@ export default function NavBar({ currentPage, onNavigate }: NavBarProps) {
                 whileTap={{ scale: 0.96 }}
                 className="relative flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors duration-200"
                 style={{
-                  color: isActive ? '#fff' : 'rgba(255,255,255,0.48)',
-                  background: isActive ? 'linear-gradient(135deg, rgba(103,232,249,0.16), rgba(37,99,235,0.18))' : 'transparent',
-                  border: isActive ? '1px solid rgba(103,232,249,0.2)' : '1px solid transparent',
+                  color: isActive ? '#fff6ee' : 'rgba(255,243,232,0.48)',
+                  background: isActive ? 'linear-gradient(135deg, rgba(220,196,163,0.16), rgba(127,79,86,0.18))' : 'transparent',
+                  border: isActive ? '1px solid rgba(220,196,163,0.18)' : '1px solid transparent',
                 }}
               >
                 <Icon size={15} />
@@ -80,7 +80,7 @@ export default function NavBar({ currentPage, onNavigate }: NavBarProps) {
                   <motion.div
                     layoutId="nav-indicator"
                     className="absolute inset-0 rounded-2xl"
-                    style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)' }}
+                    style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)' }}
                   />
                 )}
               </motion.button>
@@ -97,7 +97,7 @@ export default function NavBar({ currentPage, onNavigate }: NavBarProps) {
               </div>
               <div
                 className="flex h-10 w-10 items-center justify-center rounded-2xl text-white font-bold text-sm"
-                style={{ background: 'linear-gradient(135deg, rgba(103,232,249,0.22), rgba(37,99,235,0.88))', border: '1px solid rgba(255,255,255,0.12)' }}
+                style={{ background: 'linear-gradient(135deg, rgba(228,199,160,0.26), rgba(127,79,86,0.88))', border: '1px solid rgba(255,255,255,0.12)' }}
               >
                 {(profile.full_name || profile.email)[0].toUpperCase()}
               </div>

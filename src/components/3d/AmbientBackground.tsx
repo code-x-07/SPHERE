@@ -1,164 +1,26 @@
-import { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-
-const PARTICLE_COUNT = 1800;
-
-function ParticleField({ mouse }: { mouse: React.MutableRefObject<[number, number]> }) {
-  const meshRef = useRef<THREE.Points>(null);
-  const timeRef = useRef(0);
-
-  const { positions, velocities } = useMemo(() => {
-    const pos = new Float32Array(PARTICLE_COUNT * 3);
-    const vel = new Float32Array(PARTICLE_COUNT * 3);
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 20;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 10;
-      vel[i * 3] = (Math.random() - 0.5) * 0.002;
-      vel[i * 3 + 1] = (Math.random() - 0.5) * 0.002;
-      vel[i * 3 + 2] = 0;
-    }
-    return { positions: pos, velocities: vel };
-  }, []);
-
-  useFrame((_, delta) => {
-    if (!meshRef.current) return;
-    timeRef.current += delta;
-    const geo = meshRef.current.geometry;
-    const pos = geo.attributes.position.array as Float32Array;
-    const [mx, my] = mouse.current;
-
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      pos[i * 3] += velocities[i * 3] + Math.sin(timeRef.current * 0.3 + i * 0.01) * 0.0008;
-      pos[i * 3 + 1] += velocities[i * 3 + 1] + Math.cos(timeRef.current * 0.2 + i * 0.013) * 0.0008;
-
-      const dx = pos[i * 3] - mx * 10;
-      const dy = pos[i * 3 + 1] - my * 10;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 3) {
-        pos[i * 3] += (dx / dist) * 0.008;
-        pos[i * 3 + 1] += (dy / dist) * 0.008;
-      }
-
-      if (pos[i * 3] > 10) pos[i * 3] = -10;
-      if (pos[i * 3] < -10) pos[i * 3] = 10;
-      if (pos[i * 3 + 1] > 10) pos[i * 3 + 1] = -10;
-      if (pos[i * 3 + 1] < -10) pos[i * 3 + 1] = 10;
-    }
-    geo.attributes.position.needsUpdate = true;
-    meshRef.current.rotation.z += delta * 0.02;
-  });
-
-  return (
-    <points ref={meshRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          array={positions}
-          count={PARTICLE_COUNT}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial
-        size={0.05}
-        color="#67e8f9"
-        transparent
-        opacity={0.5}
-        sizeAttenuation
-        depthWrite={false}
-      />
-    </points>
-  );
-}
-
-function ConnectionLines({ mouse }: { mouse: React.MutableRefObject<[number, number]> }) {
-  const ref = useRef<THREE.LineSegments>(null);
-  const timeRef = useRef(0);
-  const COUNT = 60;
-
-  const positions = useMemo(() => {
-    const pos = new Float32Array(COUNT * 6);
-    for (let i = 0; i < COUNT; i++) {
-      pos[i * 6] = (Math.random() - 0.5) * 16;
-      pos[i * 6 + 1] = (Math.random() - 0.5) * 16;
-      pos[i * 6 + 2] = 0;
-      pos[i * 6 + 3] = pos[i * 6] + (Math.random() - 0.5) * 4;
-      pos[i * 6 + 4] = pos[i * 6 + 1] + (Math.random() - 0.5) * 4;
-      pos[i * 6 + 5] = 0;
-    }
-    return pos;
-  }, []);
-
-  useFrame((_, delta) => {
-    if (!ref.current) return;
-    timeRef.current += delta;
-    const pos = ref.current.geometry.attributes.position.array as Float32Array;
-    const [mx, my] = mouse.current;
-    for (let i = 0; i < COUNT; i++) {
-      pos[i * 6] += Math.sin(timeRef.current * 0.15 + i) * 0.003;
-      pos[i * 6 + 1] += Math.cos(timeRef.current * 0.12 + i) * 0.003;
-      pos[i * 6 + 3] += Math.sin(timeRef.current * 0.1 + i * 1.5) * 0.003;
-      pos[i * 6 + 4] += Math.cos(timeRef.current * 0.18 + i * 1.5) * 0.003;
-      pos[i * 6] += mx * 0.0005;
-      pos[i * 6 + 1] += my * 0.0005;
-    }
-    ref.current.geometry.attributes.position.needsUpdate = true;
-  });
-
-  return (
-    <lineSegments ref={ref}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          array={positions}
-          count={COUNT * 2}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <lineBasicMaterial color="#38bdf8" transparent opacity={0.14} />
-    </lineSegments>
-  );
-}
-
 export default function AmbientBackground() {
-  const mouse = useRef<[number, number]>([0, 0]);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    mouse.current = [
-      (e.clientX / window.innerWidth) * 2 - 1,
-      -((e.clientY / window.innerHeight) * 2 - 1),
-    ];
-  };
-
   return (
     <div
-      className="fixed inset-0 z-0"
-      onMouseMove={handleMouseMove}
-      style={{ background: 'radial-gradient(ellipse at 30% 50%, #091220 0%, #04060d 58%, #020307 100%)' }}
+      aria-hidden="true"
+      className="fixed inset-0 z-0 overflow-hidden"
+      style={{
+        background:
+          'radial-gradient(circle at 18% 20%, rgba(196, 141, 104, 0.14), transparent 24%), radial-gradient(circle at 82% 18%, rgba(140, 120, 100, 0.1), transparent 20%), radial-gradient(circle at 50% 84%, rgba(116, 126, 95, 0.12), transparent 28%), linear-gradient(180deg, #121112 0%, #0d0d0e 52%, #080809 100%)',
+      }}
     >
-      <Canvas
-        camera={{ position: [0, 0, 8], fov: 60 }}
-        gl={{ antialias: true, alpha: true }}
-        style={{ width: '100%', height: '100%' }}
-      >
-        <ambientLight intensity={0.3} />
-        <ParticleField mouse={mouse} />
-        <ConnectionLines mouse={mouse} />
-      </Canvas>
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(103,232,249,0.05) 0%, transparent 70%), radial-gradient(circle at 85% 15%, rgba(52,211,153,0.06), transparent 22%)',
-        }}
-      />
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'linear-gradient(180deg, rgba(4,5,11,0.2), rgba(4,5,11,0.6) 75%, rgba(4,5,11,0.92))',
-        }}
-      />
+      <div className="ambient-dots absolute inset-0 opacity-55" />
+      <div className="ambient-vignette absolute inset-0" />
+
+      <div className="ambient-ring ambient-ring-a" />
+      <div className="ambient-ring ambient-ring-b" />
+      <div className="ambient-ring ambient-ring-c" />
+
+      <div className="ambient-arrow ambient-arrow-a" />
+      <div className="ambient-arrow ambient-arrow-b" />
+      <div className="ambient-arrow ambient-arrow-c" />
+
+      <div className="ambient-glow ambient-glow-a" />
+      <div className="ambient-glow ambient-glow-b" />
     </div>
   );
 }
