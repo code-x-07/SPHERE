@@ -201,12 +201,19 @@ export default function RoomBookingDiscovery() {
 
   return (
     <div className="rb-shell">
-      <div className="rb-surface rb-header">
-        <div>
-          <h2>Sphere - Room Booking</h2>
-          <p>Reserve rooms, review bookings, and manage approvals in one flow.</p>
+      <div className="rb-banner">
+        <div className="rb-user-card">
+          <div>
+            <div className="rb-user-name">{profile?.full_name || 'BITS Goa User'}</div>
+            <div className="rb-user-email">{profile?.email || 'goa.bits-pilani.ac.in'}</div>
+          </div>
+          <button type="button" className="rb-signout-lookalike" disabled>
+            Room Booking
+          </button>
         </div>
+      </div>
 
+      <div className="rb-tabs-wrap">
         <div className="rb-nav">
           {availableTabs.map((tab) => {
             const Icon = tab.icon;
