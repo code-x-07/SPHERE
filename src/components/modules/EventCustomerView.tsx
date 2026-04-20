@@ -313,67 +313,76 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
               <p className="text-white/40 text-sm mt-2">Reserve any event below and the access code will appear here instantly.</p>
             </div>
           ) : (
-            <div className="flex-1 min-h-0 overflow-y-scroll pr-2 space-y-2" style={{ scrollbarGutter: 'stable' }}>
-              {wallet.map((ticket) => (
-                <div
-                  key={ticket.id}
-                  className="rounded-2xl p-3"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-white font-semibold">{ticket.events?.title || 'Event Ticket'}</p>
-                      <p className="text-white/35 text-xs mt-1">{ticket.events?.venue || 'Campus Venue'}</p>
-                    </div>
-                    <div className="text-right">
-                      <span
-                        className="block text-[10px] uppercase tracking-[0.22em]"
-                        style={{ color: ticket.status === 'used' ? '#fbbf24' : '#d9c29f' }}
-                      >
-                        {ticket.status}
-                      </span>
-                      <span className="block mt-1 text-[10px] uppercase tracking-[0.22em]" style={{ color: '#8ea07d' }}>
-                        Free
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-[92px_1fr] gap-3 items-center">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTicketId(ticket.id)}
-                      className="rounded-2xl p-2 flex items-center justify-center"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-                      aria-label={`Open large QR for ${ticket.events?.title || 'event ticket'}`}
-                    >
-                      {qrCodes[ticket.id] ? (
-                        <img
-                          src={qrCodes[ticket.id]}
-                          alt={`${ticket.events?.title || 'Event'} QR`}
-                          className="w-20 h-20 object-contain"
-                        />
-                      ) : (
-                        <div className="w-20 h-20 rounded-xl border border-white/10 animate-pulse" />
-                      )}
-                    </button>
-                    <div className="min-w-0">
-                      <div className="rounded-xl px-3 py-2 font-mono text-xs break-all" style={{ background: 'rgba(220,196,163,0.08)', color: '#e6d3ba' }}>
-                        {ticket.ticket_hash}
+            <div className="relative flex-1 min-h-0 overflow-hidden">
+              <div
+                className="h-full min-h-0 overflow-y-auto pr-2 space-y-2 overscroll-contain"
+                style={{ scrollbarGutter: 'stable', WebkitOverflowScrolling: 'touch' }}
+              >
+                {wallet.map((ticket) => (
+                  <div
+                    key={ticket.id}
+                    className="rounded-2xl p-3"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-white font-semibold">{ticket.events?.title || 'Event Ticket'}</p>
+                        <p className="text-white/35 text-xs mt-1">{ticket.events?.venue || 'Campus Venue'}</p>
                       </div>
-                      <p className="text-white/35 text-[11px] mt-2 leading-5">
-                        Present this QR at the gate. The operator scanner is locked to this event and validates only this ticket.
-                      </p>
+                      <div className="text-right">
+                        <span
+                          className="block text-[10px] uppercase tracking-[0.22em]"
+                          style={{ color: ticket.status === 'used' ? '#fbbf24' : '#d9c29f' }}
+                        >
+                          {ticket.status}
+                        </span>
+                        <span className="block mt-1 text-[10px] uppercase tracking-[0.22em]" style={{ color: '#8ea07d' }}>
+                          Free
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-[92px_1fr] gap-3 items-center">
                       <button
                         type="button"
                         onClick={() => setSelectedTicketId(ticket.id)}
-                        className="mt-2 text-xs font-medium"
-                        style={{ color: '#dcc4a3' }}
+                        className="rounded-2xl p-2 flex items-center justify-center"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                        aria-label={`Open large QR for ${ticket.events?.title || 'event ticket'}`}
                       >
-                        Open full-screen QR
+                        {qrCodes[ticket.id] ? (
+                          <img
+                            src={qrCodes[ticket.id]}
+                            alt={`${ticket.events?.title || 'Event'} QR`}
+                            className="w-20 h-20 object-contain"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 rounded-xl border border-white/10 animate-pulse" />
+                        )}
                       </button>
+                      <div className="min-w-0">
+                        <div className="rounded-xl px-3 py-2 font-mono text-xs break-all" style={{ background: 'rgba(220,196,163,0.08)', color: '#e6d3ba' }}>
+                          {ticket.ticket_hash}
+                        </div>
+                        <p className="text-white/35 text-[11px] mt-2 leading-5">
+                          Present this QR at the gate. The operator scanner is locked to this event and validates only this ticket.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTicketId(ticket.id)}
+                          className="mt-2 text-xs font-medium"
+                          style={{ color: '#dcc4a3' }}
+                        >
+                          Open full-screen QR
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-10"
+                style={{ background: 'linear-gradient(180deg, rgba(12,12,13,0), rgba(12,12,13,0.94))' }}
+              />
             </div>
           )}
         </GlassCard>
