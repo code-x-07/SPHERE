@@ -3,11 +3,11 @@ import { Building2, ClipboardList, ShieldCheck } from 'lucide-react';
 import { supabase, type Booking, type Room } from '../../lib/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
-import GlassCard from '../ui/GlassCard';
 import RoomAdminPanel from './RoomAdminPanel';
 import RoomBookingPanel from './RoomBookingPanel';
 import RoomBookingsList from './RoomBookingsList';
 import RoomListBrowser from './RoomListBrowser';
+import './room-booking-reference.css';
 
 type RoomDiscoveryTab = 'rooms' | 'mybookings' | 'admin';
 
@@ -119,13 +119,14 @@ export default function RoomBookingDiscovery() {
         message: booking.room?.name || 'Room booking cancelled',
       });
       await fetchRoomData();
-    } else {
-      addToast({
-        type: 'error',
-        title: 'Cancellation failed',
-        message: error.message,
-      });
+      return;
     }
+
+    addToast({
+      type: 'error',
+      title: 'Cancellation failed',
+      message: error.message,
+    });
   }
 
   async function updateAdminBookingStatus(
@@ -141,84 +142,74 @@ export default function RoomBookingDiscovery() {
         message: booking.room?.name || booking.id,
       });
       await fetchRoomData();
-    } else {
-      addToast({
-        type: 'error',
-        title: 'Update failed',
-        message: error.message,
-      });
+      return;
     }
+
+    addToast({
+      type: 'error',
+      title: 'Update failed',
+      message: error.message,
+    });
   }
 
   return (
-    <div className="space-y-5">
-      <GlassCard>
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <p className="text-white text-[28px] font-bold" style={{ letterSpacing: '-0.04em' }}>
-              Sphere - Room Booking
-            </p>
-            <p className="text-white/48 text-sm md:text-base">
-              Browse rooms, reserve slots, track your bookings, and manage approvals.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {availableTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedRoom(null);
-                    setActiveTab(tab.id);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold"
-                  style={{
-                    background: isActive ? 'rgba(14,165,233,0.16)' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${isActive ? 'rgba(14,165,233,0.28)' : 'rgba(255,255,255,0.08)'}`,
-                    color: isActive ? '#7dd3fc' : 'rgba(255,255,255,0.74)',
-                  }}
-                >
-                  <Icon size={15} />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
+    <div className="rb-shell">
+      <div className="rb-surface rb-header">
+        <div>
+          <h2>Sphere - Room Booking</h2>
+          <p>Reserve rooms, review bookings, and manage approvals in one flow.</p>
         </div>
-      </GlassCard>
 
-      {activeTab === 'rooms' &&
-        (selectedRoom ? (
-          <RoomBookingPanel
-            room={selectedRoom}
-            onBack={() => setSelectedRoom(null)}
-            onBookingSuccess={async () => {
-              setSelectedRoom(null);
-              setActiveTab('mybookings');
-              await fetchRoomData();
-            }}
+        <div className="rb-nav">
+          {availableTabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setSelectedRoom(null);
+                  setActiveTab(tab.id);
+                }}
+                className={`rb-nav-button ${activeTab === tab.id ? 'active' : ''}`}
+              >
+                <Icon size={15} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="rb-panel">
+        {activeTab === 'rooms' &&
+          (selectedRoom ? (
+            <RoomBookingPanel
+              room={selectedRoom}
+              onBack={() => setSelectedRoom(null)}
+              onBookingSuccess={async () => {
+                setSelectedRoom(null);
+                setActiveTab('mybookings');
+                await fetchRoomData();
+              }}
+            />
+          ) : (
+            <RoomListBrowser rooms={rooms} loading={loadingRooms} onSelectRoom={setSelectedRoom} />
+          ))}
+
+        {activeTab === 'mybookings' && (
+          <RoomBookingsList bookings={myBookings} onCancelBooking={cancelBooking} />
+        )}
+
+        {activeTab === 'admin' && profile?.role === 'admin' && (
+          <RoomAdminPanel
+            bookings={adminBookings}
+            rooms={rooms}
+            onUpdateStatus={updateAdminBookingStatus}
+            onRoomsChanged={fetchRoomData}
           />
-        ) : (
-          <RoomListBrowser rooms={rooms} loading={loadingRooms} onSelectRoom={setSelectedRoom} />
-        ))}
-
-      {activeTab === 'mybookings' && (
-        <RoomBookingsList bookings={myBookings} onCancelBooking={cancelBooking} />
-      )}
-
-      {activeTab === 'admin' && profile?.role === 'admin' && (
-        <RoomAdminPanel
-          bookings={adminBookings}
-          rooms={rooms}
-          onUpdateStatus={updateAdminBookingStatus}
-          onRoomsChanged={fetchRoomData}
-        />
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CalendarDays, Clock3, MapPin } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { supabase, type Room } from '../../lib/supabase';
 import {
   formatBookingDate,
@@ -10,7 +10,6 @@ import {
 } from '../../lib/roomBooking';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
-import GlassCard from '../ui/GlassCard';
 import RoomAvailabilityTimeline from './RoomAvailabilityTimeline';
 
 interface AvailabilityRow {
@@ -85,10 +84,7 @@ export default function RoomBookingPanel({
     }
   }, [bookedSlots, date, selectedSlot]);
 
-  const selectedRange = useMemo(
-    () => slotToTimeRange(selectedSlot),
-    [selectedSlot]
-  );
+  const selectedRange = useMemo(() => slotToTimeRange(selectedSlot), [selectedSlot]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -137,223 +133,117 @@ export default function RoomBookingPanel({
   }
 
   return (
-    <div className="space-y-4">
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
-      >
+    <div>
+      <button type="button" onClick={onBack} className="rb-subtle-button rb-back">
         <ArrowLeft size={15} />
         Back to Rooms
       </button>
 
-      <GlassCard className="overflow-hidden">
-        <div className="grid grid-cols-1 xl:grid-cols-[1.15fr,0.85fr] gap-6">
-          <div>
-            <div className="mb-6">
-              <p
-                className="text-white text-2xl font-bold"
-                style={{ letterSpacing: '-0.03em' }}
-              >
-                Book {room.name}
-              </p>
-              <p className="text-white/50 text-sm mt-3 inline-flex items-center gap-2">
-                <MapPin size={14} />
-                {room.location || 'Location TBA'}
-              </p>
+      <div className="rb-booking-layout">
+        <div className="rb-form-card">
+          <h2>Book {room.name}</h2>
+          <p className="rb-room-info">{room.location || 'Location not listed'}</p>
+
+          {error && <div className="rb-alert error">{error}</div>}
+
+          <form onSubmit={handleSubmit} className="rb-booking-form">
+            <div className="rb-form-group">
+              <label>Select Date</label>
+              <input
+                type="date"
+                value={date}
+                min={getLocalDateString()}
+                onChange={(event) => setDate(event.target.value)}
+                className="rb-input"
+              />
             </div>
 
-            {error && (
-              <div
-                className="rounded-2xl px-4 py-3 text-sm mb-5"
-                style={{
-                  background: 'rgba(239,68,68,0.12)',
-                  border: '1px solid rgba(239,68,68,0.22)',
-                  color: '#fca5a5',
-                }}
-              >
-                {error}
+            <div className="rb-timeline-box">
+              <div className="rb-field-label" style={{ marginBottom: '0.75rem' }}>
+                Room Availability for {date}
               </div>
-            )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <label className="block">
-                <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">
-                  Select Date
-                </span>
-                <div className="mt-2 relative">
-                  <CalendarDays
-                    size={16}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30"
-                  />
-                  <input
-                    type="date"
-                    value={date}
-                    min={getLocalDateString()}
-                    onChange={(event) => setDate(event.target.value)}
-                    className="w-full rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white outline-none"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                    }}
-                  />
+              {loadingAvailability ? (
+                <div className="rb-loading-grid">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="rb-shimmer" />
+                  ))}
                 </div>
-              </label>
-
-              <div>
-                <p className="text-white/50 text-xs font-medium uppercase tracking-[0.18em] mb-3">
-                  Room Availability for {date}
-                </p>
-                {loadingAvailability ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {Array.from({ length: 6 }).map((_, index) => (
-                      <div
-                        key={index}
-                        className="rounded-2xl shimmer h-20"
-                        style={{ border: '1px solid rgba(255,255,255,0.06)' }}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <RoomAvailabilityTimeline
-                    selectedDate={date}
-                    bookedSlots={bookedSlots}
-                    selectedSlot={selectedSlot}
-                    onSelectSlot={setSelectedSlot}
-                  />
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="block">
-                  <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">
-                    Start Time
-                  </span>
-                  <input
-                    type="time"
-                    value={selectedRange.start || ''}
-                    readOnly
-                    className="w-full rounded-2xl px-4 py-3 mt-2 text-sm text-white outline-none"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                    }}
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">
-                    End Time
-                  </span>
-                  <input
-                    type="time"
-                    value={selectedRange.end || ''}
-                    readOnly
-                    className="w-full rounded-2xl px-4 py-3 mt-2 text-sm text-white outline-none"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                    }}
-                  />
-                </label>
-              </div>
-
-              <label className="block">
-                <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">
-                  Purpose (Optional)
-                </span>
-                <textarea
-                  value={purpose}
-                  onChange={(event) => setPurpose(event.target.value)}
-                  rows={3}
-                  placeholder="What will you use this room for?"
-                  className="w-full rounded-2xl px-4 py-3.5 mt-2 text-sm text-white outline-none resize-none"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                  }}
+              ) : (
+                <RoomAvailabilityTimeline
+                  selectedDate={date}
+                  bookedSlots={bookedSlots}
+                  selectedSlot={selectedSlot}
+                  onSelectSlot={setSelectedSlot}
                 />
-              </label>
+              )}
+            </div>
 
-              <button
-                type="submit"
-                disabled={submitting || !selectedSlot}
-                className="w-full rounded-2xl px-4 py-3.5 text-sm font-semibold disabled:opacity-60"
-                style={{
-                  background:
-                    'linear-gradient(135deg, rgba(16,185,129,0.95), rgba(5,150,105,0.88))',
-                  color: '#f0fdf4',
-                }}
-              >
-                {submitting ? 'Booking...' : 'Confirm Booking'}
-              </button>
-            </form>
-          </div>
-
-          <div className="space-y-4">
-            <div
-              className="rounded-3xl p-5"
-              style={{
-                background:
-                  'linear-gradient(180deg, rgba(16,185,129,0.12), rgba(255,255,255,0.03))',
-                border: '1px solid rgba(16,185,129,0.2)',
-              }}
-            >
-              <p className="text-white text-lg font-semibold">Booking Summary</p>
-              <div className="mt-4 space-y-3 text-sm text-white/70">
-                <p><strong className="text-white">Room:</strong> {room.name}</p>
-                <p><strong className="text-white">Date:</strong> {formatBookingDate(date)}</p>
-                <p>
-                  <strong className="text-white">Time:</strong>{' '}
-                  {selectedRange.start && selectedRange.end
-                    ? `${selectedRange.start} - ${selectedRange.end}`
-                    : 'Choose a slot'}
-                </p>
-                {purpose.trim() && (
-                  <p><strong className="text-white">Purpose:</strong> {purpose.trim()}</p>
-                )}
+            <div className="rb-time-grid">
+              <div className="rb-form-group">
+                <label>Start Time</label>
+                <input type="time" value={selectedRange.start || ''} readOnly className="rb-input" />
+              </div>
+              <div className="rb-form-group">
+                <label>End Time</label>
+                <input type="time" value={selectedRange.end || ''} readOnly className="rb-input" />
               </div>
             </div>
 
-            <GlassCard>
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-white/55 text-sm">
-                  <Clock3 size={14} />
-                  Fixed 1-hour reservations
-                </div>
-                <div className="grid grid-cols-1 gap-3 text-sm text-white/62">
-                  <div>
-                    <p className="text-white/35 text-xs uppercase tracking-[0.18em] mb-1">
-                      Capacity
-                    </p>
-                    <p className="text-white font-semibold">{room.capacity} seats</p>
-                  </div>
-                  <div>
-                    <p className="text-white/35 text-xs uppercase tracking-[0.18em] mb-1">
-                      Amenities
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {(room.amenities || []).map((amenity) => (
-                        <span
-                          key={amenity}
-                          className="px-2.5 py-1 rounded-full text-[11px] font-medium"
-                          style={{
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.07)',
-                            color: 'rgba(255,255,255,0.72)',
-                          }}
-                        >
-                          {amenity}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </GlassCard>
+            <div className="rb-form-group">
+              <label>Purpose (Optional)</label>
+              <textarea
+                value={purpose}
+                onChange={(event) => setPurpose(event.target.value)}
+                rows={4}
+                placeholder="What will you use this room for?"
+                className="rb-textarea"
+              />
+            </div>
+
+            <button type="submit" disabled={submitting || !selectedSlot} className="rb-primary-button">
+              {submitting ? 'Booking...' : 'Confirm Booking'}
+            </button>
+          </form>
+        </div>
+
+        <div className="rb-summary">
+          <h3>Booking Summary</h3>
+          <p>
+            <strong>Room:</strong> {room.name}
+          </p>
+          <p>
+            <strong>Date:</strong> {formatBookingDate(date)}
+          </p>
+          <p>
+            <strong>Time:</strong>{' '}
+            {selectedRange.start && selectedRange.end
+              ? `${selectedRange.start} - ${selectedRange.end}`
+              : 'Choose a slot'}
+          </p>
+          {purpose.trim() && (
+            <p>
+              <strong>Purpose:</strong> {purpose.trim()}
+            </p>
+          )}
+
+          <div className="rb-timeline-box" style={{ marginTop: '1rem' }}>
+            <div className="rb-field-label" style={{ marginBottom: '0.5rem' }}>
+              Room Details
+            </div>
+            <p className="rb-muted">
+              <strong>Capacity:</strong> {room.capacity} seats
+            </p>
+            <div className="rb-tag-row" style={{ marginTop: '0.7rem' }}>
+              {(room.amenities || []).map((amenity) => (
+                <span key={amenity} className="rb-tag">
+                  {amenity}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-      </GlassCard>
+      </div>
     </div>
   );
 }

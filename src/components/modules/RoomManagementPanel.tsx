@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
-import { supabase, type Room } from '../../lib/supabase';
+import type { Room } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { useToastStore } from '../../store/useToastStore';
-import GlassCard from '../ui/GlassCard';
 
 interface RoomManagementPanelProps {
   rooms: Room[];
@@ -151,117 +150,74 @@ export default function RoomManagementPanel({
     const action = mode === 'create' ? createRoom : () => saveRoom(roomId!);
 
     return (
-      <GlassCard>
-        <div className="flex items-center justify-between gap-4 mb-5">
-          <div>
-            <p className="text-white text-lg font-bold" style={{ letterSpacing: '-0.03em' }}>
-              {title}
-            </p>
-            <p className="text-white/45 text-sm">
-              Match the room browser with accurate names, locations, and amenities.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={resetForm}
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <X size={15} className="text-white/65" />
-          </button>
-        </div>
+      <div className="rb-management-form rb-management-card">
+        <div className="rb-management-title">{title}</div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="block">
-            <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">Room Name</span>
+        <div className="rb-form-grid">
+          <div className="rb-form-group">
+            <label>Room Name</label>
             <input
               value={formData.name}
               onChange={(event) => updateField('name', event.target.value)}
-              className="w-full rounded-2xl px-4 py-3 mt-2 text-sm text-white outline-none"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-              placeholder="e.g. Conference Room A"
+              className="rb-input"
+              placeholder="Conference Room A"
             />
-          </label>
+          </div>
 
-          <label className="block">
-            <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">Capacity</span>
+          <div className="rb-form-group">
+            <label>Capacity</label>
             <input
               type="number"
               min="1"
               value={formData.capacity}
               onChange={(event) => updateField('capacity', event.target.value)}
-              className="w-full rounded-2xl px-4 py-3 mt-2 text-sm text-white outline-none"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              className="rb-input"
               placeholder="20"
             />
-          </label>
+          </div>
 
-          <label className="block md:col-span-2">
-            <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">Location</span>
+          <div className="rb-form-group full">
+            <label>Location</label>
             <input
               value={formData.location}
               onChange={(event) => updateField('location', event.target.value)}
-              className="w-full rounded-2xl px-4 py-3 mt-2 text-sm text-white outline-none"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-              placeholder="e.g. Building A - Floor 2"
+              className="rb-input"
+              placeholder="Building A - Floor 2"
             />
-          </label>
+          </div>
 
-          <label className="block md:col-span-2">
-            <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">Amenities</span>
+          <div className="rb-form-group full">
+            <label>Amenities (comma-separated)</label>
             <input
               value={formData.amenities}
               onChange={(event) => updateField('amenities', event.target.value)}
-              className="w-full rounded-2xl px-4 py-3 mt-2 text-sm text-white outline-none"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              className="rb-input"
               placeholder="Projector, Whiteboard, WiFi"
             />
-          </label>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 mt-6">
-          <button
-            type="button"
-            onClick={action}
-            disabled={submitting}
-            className="rounded-2xl px-5 py-3 text-sm font-semibold"
-            style={{
-              background: 'linear-gradient(135deg, rgba(16,185,129,0.94), rgba(5,150,105,0.86))',
-              color: '#f0fdf4',
-            }}
-          >
+        <div className="rb-actions" style={{ marginTop: '1rem' }}>
+          <button type="button" onClick={action} disabled={submitting} className="rb-primary-button">
             {submitting ? (mode === 'create' ? 'Creating...' : 'Saving...') : mode === 'create' ? 'Create Room' : 'Save Changes'}
           </button>
-          <button
-            type="button"
-            onClick={resetForm}
-            disabled={submitting}
-            className="rounded-2xl px-5 py-3 text-sm font-semibold"
-            style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.76)',
-            }}
-          >
+          <button type="button" onClick={resetForm} disabled={submitting} className="rb-subtle-button">
             Cancel
           </button>
         </div>
-      </GlassCard>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <GlassCard>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <div className="rb-surface rb-management-topbar">
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
           <div>
-            <p className="text-white text-lg font-bold" style={{ letterSpacing: '-0.03em' }}>
-              Manage Rooms
-            </p>
-            <p className="text-white/45 text-sm">
-              Create, edit, and retire rooms that appear in the booking browser.
-            </p>
+            <div className="rb-filter-title">Manage Rooms</div>
+            <p className="rb-muted">Create, edit, and remove rooms from the booking browser.</p>
           </div>
+
           <button
             type="button"
             onClick={() => {
@@ -269,106 +225,72 @@ export default function RoomManagementPanel({
               setIsAddingRoom(true);
               setEditingRoomId(null);
             }}
-            className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold"
-            style={{
-              background: 'linear-gradient(135deg, rgba(14,165,233,0.92), rgba(2,132,199,0.86))',
-              color: '#eff6ff',
-            }}
+            className="rb-primary-button"
           >
-            <Plus size={15} />
             Add New Room
           </button>
         </div>
-      </GlassCard>
+      </div>
 
       {isAddingRoom && renderForm('create')}
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {rooms.map((room) => (
-          <div key={room.id} className="space-y-4">
-            {editingRoomId === room.id ? (
-              renderForm('edit', room.id)
-            ) : (
-              <GlassCard className="h-full">
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div>
-                    <p className="text-white text-lg font-semibold">{room.name}</p>
-                    <p className="text-white/45 text-sm mt-2">{room.location || 'Location not listed'}</p>
+      {rooms.length === 0 ? (
+        <div className="rb-empty rb-panel">
+          <div className="rb-filter-title">No rooms created yet</div>
+          <p className="rb-muted">Add your first room to populate the booking browser.</p>
+        </div>
+      ) : (
+        <div className="rb-management-grid">
+          {rooms.map((room) => (
+            <article key={room.id} className="rb-management-card">
+              {editingRoomId === room.id ? (
+                renderForm('edit', room.id)
+              ) : (
+                <>
+                  <div className="rb-management-card-header">
+                    <div>
+                      <h3>{room.name}</h3>
+                      <p className="rb-muted" style={{ marginTop: '0.35rem' }}>
+                        {room.location || 'Location not listed'}
+                      </p>
+                    </div>
+                    <span className="rb-room-capacity">{room.capacity} seats</span>
                   </div>
-                  <span
-                    className="px-3 py-1.5 rounded-full text-xs font-semibold"
-                    style={{
-                      background: 'rgba(14,165,233,0.14)',
-                      border: '1px solid rgba(14,165,233,0.22)',
-                      color: '#7dd3fc',
-                    }}
-                  >
-                    {room.capacity} seats
-                  </span>
-                </div>
 
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {(room.amenities || []).map((amenity) => (
-                    <span
-                      key={amenity}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-medium"
-                      style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.07)',
-                        color: 'rgba(255,255,255,0.72)',
+                  <div className="rb-tag-row" style={{ marginBottom: '1rem' }}>
+                    {(room.amenities || []).map((amenity) => (
+                      <span key={amenity} className="rb-tag">
+                        {amenity}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="rb-actions">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        hydrateForm(room);
+                        setEditingRoomId(room.id);
+                        setIsAddingRoom(false);
                       }}
+                      className="rb-success-button"
                     >
-                      {amenity}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      hydrateForm(room);
-                      setEditingRoomId(room.id);
-                      setIsAddingRoom(false);
-                    }}
-                    className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold flex-1"
-                    style={{
-                      background: 'rgba(16,185,129,0.14)',
-                      border: '1px solid rgba(16,185,129,0.22)',
-                      color: '#6ee7b7',
-                    }}
-                  >
-                    <Pencil size={14} />
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteRoom(room)}
-                    disabled={submitting}
-                    className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold flex-1"
-                    style={{
-                      background: 'rgba(239,68,68,0.12)',
-                      border: '1px solid rgba(239,68,68,0.2)',
-                      color: '#fca5a5',
-                    }}
-                  >
-                    <Trash2 size={14} />
-                    Delete
-                  </button>
-                </div>
-              </GlassCard>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {rooms.length === 0 && (
-        <GlassCard className="text-center py-12">
-          <p className="text-white text-lg font-semibold">No rooms created yet</p>
-          <p className="text-white/45 text-sm mt-2">
-            Add your first room to populate the booking browser.
-          </p>
-        </GlassCard>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteRoom(room)}
+                      disabled={submitting}
+                      className="rb-danger-button"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </article>
+          ))}
+        </div>
       )}
     </div>
   );
