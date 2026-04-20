@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarDays, Clock3, MapPin } from 'lucide-react';
 import { supabase, type Room } from '../../lib/supabase';
 import {
@@ -66,7 +66,7 @@ export default function RoomBookingPanel({
       setLoadingAvailability(false);
     }
 
-    fetchAvailability();
+    void fetchAvailability();
 
     return () => {
       mounted = false;
@@ -85,7 +85,10 @@ export default function RoomBookingPanel({
     }
   }, [bookedSlots, date, selectedSlot]);
 
-  const selectedRange = slotToTimeRange(selectedSlot);
+  const selectedRange = useMemo(
+    () => slotToTimeRange(selectedSlot),
+    [selectedSlot]
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -141,26 +144,23 @@ export default function RoomBookingPanel({
         className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
       >
         <ArrowLeft size={15} />
-        Back to rooms
+        Back to Rooms
       </button>
 
       <GlassCard className="overflow-hidden">
-        <div className="grid grid-cols-1 xl:grid-cols-[1.35fr,0.9fr] gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[1.15fr,0.85fr] gap-6">
           <div>
             <div className="mb-6">
-              <p className="text-white text-2xl font-bold" style={{ letterSpacing: '-0.03em' }}>
+              <p
+                className="text-white text-2xl font-bold"
+                style={{ letterSpacing: '-0.03em' }}
+              >
                 Book {room.name}
               </p>
-              <div className="flex flex-wrap gap-4 mt-3 text-sm text-white/50">
-                <span className="inline-flex items-center gap-2">
-                  <MapPin size={14} />
-                  {room.location || 'Location TBA'}
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <Clock3 size={14} />
-                  Fixed 1-hour reservations
-                </span>
-              </div>
+              <p className="text-white/50 text-sm mt-3 inline-flex items-center gap-2">
+                <MapPin size={14} />
+                {room.location || 'Location TBA'}
+              </p>
             </div>
 
             {error && (
@@ -182,7 +182,10 @@ export default function RoomBookingPanel({
                   Select Date
                 </span>
                 <div className="mt-2 relative">
-                  <CalendarDays size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                  <CalendarDays
+                    size={16}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30"
+                  />
                   <input
                     type="date"
                     value={date}
@@ -199,7 +202,7 @@ export default function RoomBookingPanel({
 
               <div>
                 <p className="text-white/50 text-xs font-medium uppercase tracking-[0.18em] mb-3">
-                  Room Availability For {date}
+                  Room Availability for {date}
                 </p>
                 {loadingAvailability ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -221,14 +224,48 @@ export default function RoomBookingPanel({
                 )}
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="block">
+                  <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">
+                    Start Time
+                  </span>
+                  <input
+                    type="time"
+                    value={selectedRange.start || ''}
+                    readOnly
+                    className="w-full rounded-2xl px-4 py-3 mt-2 text-sm text-white outline-none"
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">
+                    End Time
+                  </span>
+                  <input
+                    type="time"
+                    value={selectedRange.end || ''}
+                    readOnly
+                    className="w-full rounded-2xl px-4 py-3 mt-2 text-sm text-white outline-none"
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  />
+                </label>
+              </div>
+
               <label className="block">
                 <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">
-                  Purpose
+                  Purpose (Optional)
                 </span>
                 <textarea
                   value={purpose}
                   onChange={(event) => setPurpose(event.target.value)}
-                  rows={4}
+                  rows={3}
                   placeholder="What will you use this room for?"
                   className="w-full rounded-2xl px-4 py-3.5 mt-2 text-sm text-white outline-none resize-none"
                   style={{
@@ -243,7 +280,8 @@ export default function RoomBookingPanel({
                 disabled={submitting || !selectedSlot}
                 className="w-full rounded-2xl px-4 py-3.5 text-sm font-semibold disabled:opacity-60"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(16,185,129,0.95), rgba(5,150,105,0.88))',
+                  background:
+                    'linear-gradient(135deg, rgba(16,185,129,0.95), rgba(5,150,105,0.88))',
                   color: '#f0fdf4',
                 }}
               >
@@ -256,56 +294,61 @@ export default function RoomBookingPanel({
             <div
               className="rounded-3xl p-5"
               style={{
-                background: 'linear-gradient(180deg, rgba(16,185,129,0.12), rgba(255,255,255,0.03))',
+                background:
+                  'linear-gradient(180deg, rgba(16,185,129,0.12), rgba(255,255,255,0.03))',
                 border: '1px solid rgba(16,185,129,0.2)',
               }}
             >
-              <p className="text-white/45 text-xs font-medium uppercase tracking-[0.18em] mb-3">
-                Booking Summary
-              </p>
-              <div className="space-y-3 text-sm text-white/70">
-                <div>
-                  <p className="text-white/35 text-xs mb-1">Room</p>
-                  <p className="text-white font-semibold">{room.name}</p>
-                </div>
-                <div>
-                  <p className="text-white/35 text-xs mb-1">Date</p>
-                  <p>{formatBookingDate(date)}</p>
-                </div>
-                <div>
-                  <p className="text-white/35 text-xs mb-1">Time</p>
-                  <p>{selectedSlot ? `${selectedRange.start} - ${selectedRange.end}` : 'Choose a slot'}</p>
-                </div>
-                <div>
-                  <p className="text-white/35 text-xs mb-1">Status</p>
-                  <p>New requests are submitted as pending for approval.</p>
-                </div>
-                <div>
-                  <p className="text-white/35 text-xs mb-1">Amenities</p>
-                  <div className="flex flex-wrap gap-2">
-                    {room.amenities.map((amenity) => (
-                      <span
-                        key={amenity}
-                        className="px-2.5 py-1 rounded-full text-[11px] font-medium"
-                        style={{
-                          background: 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.07)',
-                        }}
-                      >
-                        {amenity}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              <p className="text-white text-lg font-semibold">Booking Summary</p>
+              <div className="mt-4 space-y-3 text-sm text-white/70">
+                <p><strong className="text-white">Room:</strong> {room.name}</p>
+                <p><strong className="text-white">Date:</strong> {formatBookingDate(date)}</p>
+                <p>
+                  <strong className="text-white">Time:</strong>{' '}
+                  {selectedRange.start && selectedRange.end
+                    ? `${selectedRange.start} - ${selectedRange.end}`
+                    : 'Choose a slot'}
+                </p>
+                {purpose.trim() && (
+                  <p><strong className="text-white">Purpose:</strong> {purpose.trim()}</p>
+                )}
               </div>
             </div>
 
             <GlassCard>
-              <p className="text-white text-sm font-semibold mb-2">Room booking flow</p>
-              <div className="space-y-2 text-sm text-white/55">
-                <p>1. Pick a room from the browser.</p>
-                <p>2. Choose a date and select a free one-hour slot.</p>
-                <p>3. Add an optional purpose and confirm the reservation.</p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-white/55 text-sm">
+                  <Clock3 size={14} />
+                  Fixed 1-hour reservations
+                </div>
+                <div className="grid grid-cols-1 gap-3 text-sm text-white/62">
+                  <div>
+                    <p className="text-white/35 text-xs uppercase tracking-[0.18em] mb-1">
+                      Capacity
+                    </p>
+                    <p className="text-white font-semibold">{room.capacity} seats</p>
+                  </div>
+                  <div>
+                    <p className="text-white/35 text-xs uppercase tracking-[0.18em] mb-1">
+                      Amenities
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {(room.amenities || []).map((amenity) => (
+                        <span
+                          key={amenity}
+                          className="px-2.5 py-1 rounded-full text-[11px] font-medium"
+                          style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.07)',
+                            color: 'rgba(255,255,255,0.72)',
+                          }}
+                        >
+                          {amenity}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </GlassCard>
           </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Building2, Filter, MapPin, Users } from 'lucide-react';
 import type { Room } from '../../lib/supabase';
@@ -19,45 +19,73 @@ export default function RoomListBrowser({
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [minCapacity, setMinCapacity] = useState(0);
   const [maxCapacity, setMaxCapacity] = useState(0);
+  const [showCapacityPanel, setShowCapacityPanel] = useState(false);
+  const capacityPanelRef = useRef<HTMLDivElement>(null);
 
-  const capacities = rooms
-    .map((room) => Number(room.capacity))
-    .filter((value) => Number.isFinite(value) && value > 0);
-  const minimumCapacity = capacities.length > 0 ? Math.min(...capacities) : 0;
-  const maximumCapacity = capacities.length > 0 ? Math.max(...capacities) : 0;
+  const capacityBounds = useMemo(() => {
+    const capacities = rooms
+      .map((room) => Number(room.capacity))
+      .filter((capacity) => Number.isFinite(capacity) && capacity > 0);
+
+    if (capacities.length === 0) {
+      return { min: 0, max: 0 };
+    }
+
+    return {
+      min: Math.min(...capacities),
+      max: Math.max(...capacities),
+    };
+  }, [rooms]);
 
   useEffect(() => {
-    setMinCapacity(minimumCapacity);
-    setMaxCapacity(maximumCapacity);
-  }, [minimumCapacity, maximumCapacity]);
+    setMinCapacity(capacityBounds.min);
+    setMaxCapacity(capacityBounds.max);
+  }, [capacityBounds.min, capacityBounds.max]);
 
-  const allAmenities = Array.from(
-    new Set(rooms.flatMap((room) => room.amenities || []))
-  ).sort((left, right) => left.localeCompare(right));
+  useEffect(() => {
+    function handleOutsideClick(event: MouseEvent) {
+      if (
+        capacityPanelRef.current &&
+        !capacityPanelRef.current.contains(event.target as Node)
+      ) {
+        setShowCapacityPanel(false);
+      }
+    }
 
-  const allLocations = Array.from(
-    new Set(
-      rooms
-        .map((room) => room.location.trim())
-        .filter((location) => location.length > 0)
-    )
-  ).sort((left, right) => left.localeCompare(right));
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
-  const filteredRooms = rooms.filter((room) => {
-    const capacity = Number(room.capacity) || 0;
-    const matchesCapacity = capacity >= minCapacity && capacity <= maxCapacity;
-    const matchesLocation = locationFilter === 'all' || room.location.trim() === locationFilter;
-    const matchesAmenities = selectedAmenities.every((amenity) => room.amenities.includes(amenity));
+  const availableAmenities = useMemo(() => {
+    const allAmenities = rooms.flatMap((room) => room.amenities || []);
+    return [...new Set(allAmenities)].sort((a, b) => a.localeCompare(b));
+  }, [rooms]);
 
-    return matchesCapacity && matchesLocation && matchesAmenities;
-  });
+  const availableLocations = useMemo(() => {
+    const allLocations = rooms
+      .map((room) => (room.location || '').trim())
+      .filter((location) => location.length > 0);
 
-  function clearFilters() {
-    setLocationFilter('all');
-    setSelectedAmenities([]);
-    setMinCapacity(minimumCapacity);
-    setMaxCapacity(maximumCapacity);
-  }
+    return [...new Set(allLocations)].sort((a, b) => a.localeCompare(b));
+  }, [rooms]);
+
+  const filteredRooms = useMemo(() => {
+    return rooms.filter((room) => {
+      const roomCapacity = Number(room.capacity) || 0;
+      const roomLocation = (room.location || '').trim();
+      const roomAmenities = room.amenities || [];
+
+      const matchesCapacity =
+        roomCapacity >= minCapacity && roomCapacity <= maxCapacity;
+      const matchesLocation =
+        locationFilter === 'all' || roomLocation === locationFilter;
+      const matchesAmenities = selectedAmenities.every((amenity) =>
+        roomAmenities.includes(amenity)
+      );
+
+      return matchesCapacity && matchesLocation && matchesAmenities;
+    });
+  }, [rooms, minCapacity, maxCapacity, locationFilter, selectedAmenities]);
 
   function toggleAmenity(amenity: string) {
     setSelectedAmenities((current) =>
@@ -65,6 +93,14 @@ export default function RoomListBrowser({
         ? current.filter((item) => item !== amenity)
         : [...current, amenity]
     );
+  }
+
+  function clearFilters() {
+    setMinCapacity(capacityBounds.min);
+    setMaxCapacity(capacityBounds.max);
+    setLocationFilter('all');
+    setSelectedAmenities([]);
+    setShowCapacityPanel(false);
   }
 
   if (loading) {
@@ -85,59 +121,84 @@ export default function RoomListBrowser({
         <div className="flex items-center gap-3 mb-5">
           <div
             className="w-11 h-11 rounded-2xl flex items-center justify-center"
-            style={{ background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.24)' }}
+            style={{
+              background: 'rgba(16,185,129,0.14)',
+              border: '1px solid rgba(16,185,129,0.24)',
+            }}
           >
             <Filter size={18} className="text-emerald-400" />
           </div>
           <div>
-            <h2 className="text-white text-lg font-bold" style={{ letterSpacing: '-0.03em' }}>
-              Browse Rooms
+            <h2
+              className="text-white text-lg font-bold"
+              style={{ letterSpacing: '-0.03em' }}
+            >
+              Available Rooms
             </h2>
             <p className="text-white/45 text-sm">
-              Match by capacity, location, and amenities before picking a slot.
+              Filter by capacity, location, and amenities before picking a room.
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1.2fr,1fr,auto] gap-4">
-          <label className="space-y-2">
+          <div className="space-y-2" ref={capacityPanelRef}>
             <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">
               Capacity Range
             </span>
-            <div
-              className="rounded-2xl p-4"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+            <button
+              type="button"
+              onClick={() => setShowCapacityPanel((current) => !current)}
+              className="w-full rounded-2xl px-4 py-4 text-left text-sm text-white"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
             >
-              <div className="flex items-center justify-between text-white/55 text-sm mb-3">
-                <span>{minCapacity}</span>
-                <span>{maxCapacity}</span>
+              {`Capacity: ${minCapacity} - ${maxCapacity}`}
+            </button>
+
+            {showCapacityPanel && (
+              <div
+                className="rounded-2xl p-4"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                }}
+              >
+                <div className="flex items-center justify-between text-white/55 text-sm mb-3">
+                  <span>Min: {minCapacity}</span>
+                  <span>Max: {maxCapacity}</span>
+                </div>
+                <div className="space-y-3">
+                  <input
+                    type="range"
+                    min={capacityBounds.min}
+                    max={capacityBounds.max}
+                    value={minCapacity}
+                    disabled={capacityBounds.min === capacityBounds.max}
+                    onChange={(event) => {
+                      const nextMin = Number(event.target.value);
+                      setMinCapacity(Math.min(nextMin, maxCapacity));
+                    }}
+                    className="w-full"
+                  />
+                  <input
+                    type="range"
+                    min={capacityBounds.min}
+                    max={capacityBounds.max}
+                    value={maxCapacity}
+                    disabled={capacityBounds.min === capacityBounds.max}
+                    onChange={(event) => {
+                      const nextMax = Number(event.target.value);
+                      setMaxCapacity(Math.max(nextMax, minCapacity));
+                    }}
+                    className="w-full"
+                  />
+                </div>
               </div>
-              <div className="space-y-3">
-                <input
-                  type="range"
-                  min={minimumCapacity}
-                  max={maximumCapacity}
-                  value={minCapacity}
-                  onChange={(event) => {
-                    const value = Number(event.target.value);
-                    setMinCapacity(Math.min(value, maxCapacity));
-                  }}
-                  className="w-full"
-                />
-                <input
-                  type="range"
-                  min={minimumCapacity}
-                  max={maximumCapacity}
-                  value={maxCapacity}
-                  onChange={(event) => {
-                    const value = Number(event.target.value);
-                    setMaxCapacity(Math.max(value, minCapacity));
-                  }}
-                  className="w-full"
-                />
-              </div>
-            </div>
-          </label>
+            )}
+          </div>
 
           <label className="space-y-2">
             <span className="text-white/50 text-xs font-medium uppercase tracking-[0.18em]">
@@ -153,7 +214,7 @@ export default function RoomListBrowser({
               }}
             >
               <option value="all">All locations</option>
-              {allLocations.map((location) => (
+              {availableLocations.map((location) => (
                 <option key={location} value={location}>
                   {location}
                 </option>
@@ -175,28 +236,39 @@ export default function RoomListBrowser({
           </button>
         </div>
 
-        {allAmenities.length > 0 && (
+        {availableAmenities.length > 0 && (
           <div className="mt-5">
             <p className="text-white/50 text-xs font-medium uppercase tracking-[0.18em] mb-3">
               Amenities
             </p>
             <div className="flex flex-wrap gap-2">
-              {allAmenities.map((amenity) => {
+              {availableAmenities.map((amenity) => {
                 const isActive = selectedAmenities.includes(amenity);
+
                 return (
-                  <button
+                  <label
                     key={amenity}
-                    type="button"
-                    onClick={() => toggleAmenity(amenity)}
-                    className="px-3 py-2 rounded-full text-xs font-semibold transition-colors"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-full text-xs font-semibold cursor-pointer transition-colors"
                     style={{
-                      background: isActive ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${isActive ? 'rgba(16,185,129,0.28)' : 'rgba(255,255,255,0.07)'}`,
+                      background: isActive
+                        ? 'rgba(16,185,129,0.18)'
+                        : 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${
+                        isActive
+                          ? 'rgba(16,185,129,0.28)'
+                          : 'rgba(255,255,255,0.07)'
+                      }`,
                       color: isActive ? '#6ee7b7' : 'rgba(255,255,255,0.65)',
                     }}
                   >
-                    {amenity}
-                  </button>
+                    <input
+                      type="checkbox"
+                      checked={selectedAmenities.includes(amenity)}
+                      onChange={() => toggleAmenity(amenity)}
+                      className="sr-only"
+                    />
+                    <span>{amenity}</span>
+                  </label>
                 );
               })}
             </div>
@@ -215,7 +287,10 @@ export default function RoomListBrowser({
             <GlassCard className="h-full">
               <div className="flex items-start justify-between gap-4 mb-5">
                 <div>
-                  <p className="text-white text-lg font-bold" style={{ letterSpacing: '-0.03em' }}>
+                  <p
+                    className="text-white text-lg font-bold"
+                    style={{ letterSpacing: '-0.03em' }}
+                  >
                     {room.name}
                   </p>
                   <div className="flex items-center gap-2 text-white/45 text-sm mt-2">
@@ -240,7 +315,9 @@ export default function RoomListBrowser({
                 <div className="flex items-start gap-3 text-sm text-white/62">
                   <Building2 size={15} className="text-white/35 mt-0.5" />
                   <div>
-                    <p className="text-white/35 text-xs uppercase tracking-[0.18em] mb-1">Amenities</p>
+                    <p className="text-white/35 text-xs uppercase tracking-[0.18em] mb-1">
+                      Amenities
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       {(room.amenities || []).map((amenity) => (
                         <span
@@ -263,33 +340,33 @@ export default function RoomListBrowser({
               <button
                 type="button"
                 onClick={() => onSelectRoom(room)}
-                className="w-full mt-6 rounded-2xl px-4 py-3 text-sm font-semibold transition-transform active:scale-[0.99]"
+                className="mt-6 w-full rounded-2xl px-4 py-3 text-sm font-semibold"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(16,185,129,0.9), rgba(5,150,105,0.85))',
-                  color: '#f0fdf4',
+                  background:
+                    'linear-gradient(135deg, rgba(14,165,233,0.92), rgba(2,132,199,0.86))',
+                  color: '#eff6ff',
                 }}
               >
-                Book Room
+                Book Room →
               </button>
             </GlassCard>
           </motion.div>
         ))}
       </div>
 
-      {rooms.length > 0 && filteredRooms.length === 0 && (
+      {rooms.length === 0 && (
         <GlassCard className="text-center py-12">
-          <p className="text-white text-lg font-semibold">No rooms match those filters</p>
-          <p className="text-white/45 text-sm mt-2">
-            Try widening the capacity range or clearing one of the amenity filters.
-          </p>
+          <p className="text-white text-lg font-semibold">No rooms available</p>
         </GlassCard>
       )}
 
-      {rooms.length === 0 && (
+      {rooms.length > 0 && filteredRooms.length === 0 && (
         <GlassCard className="text-center py-12">
-          <p className="text-white text-lg font-semibold">No rooms available yet</p>
+          <p className="text-white text-lg font-semibold">
+            No rooms match your selected filters
+          </p>
           <p className="text-white/45 text-sm mt-2">
-            Add room records in Supabase to populate this browser.
+            Try widening the capacity range or clearing one of the filters.
           </p>
         </GlassCard>
       )}
