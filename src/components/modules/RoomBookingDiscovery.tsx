@@ -198,7 +198,11 @@ export default function RoomBookingDiscovery() {
           ))}
 
         {activeTab === 'mybookings' && (
-          <RoomBookingsList bookings={myBookings} onCancelBooking={cancelBooking} />
+          <RoomBookingsList
+            bookings={myBookings}
+            onCancelBooking={cancelBooking}
+            onBrowseRooms={() => setActiveTab('rooms')}
+          />
         )}
 
         {activeTab === 'admin' && profile?.role === 'admin' && (

@@ -9,11 +9,13 @@ type BookingWithRoom = Booking & {
 interface RoomBookingsListProps {
   bookings: BookingWithRoom[];
   onCancelBooking: (booking: BookingWithRoom) => Promise<void>;
+  onBrowseRooms?: () => void;
 }
 
 export default function RoomBookingsList({
   bookings,
   onCancelBooking,
+  onBrowseRooms,
 }: RoomBookingsListProps) {
   const [showApprovedOnly, setShowApprovedOnly] = useState(false);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
@@ -51,6 +53,13 @@ export default function RoomBookingsList({
       <div className="rb-empty rb-panel">
         <div className="rb-filter-title">You don&apos;t have any bookings yet.</div>
         <p className="rb-muted">Browse available rooms to make your first booking.</p>
+        {onBrowseRooms && (
+          <div className="rb-actions" style={{ marginTop: '1rem' }}>
+            <button type="button" onClick={onBrowseRooms} className="rb-primary-button">
+              Browse Rooms
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -80,6 +89,13 @@ export default function RoomBookingsList({
         <div className="rb-empty rb-panel">
           <div className="rb-filter-title">No approved bookings found.</div>
           <p className="rb-muted">Turn off the filter to see all booking statuses.</p>
+          {onBrowseRooms && (
+            <div className="rb-actions" style={{ marginTop: '1rem' }}>
+              <button type="button" onClick={onBrowseRooms} className="rb-subtle-button">
+                Browse Rooms
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="rb-bookings-list">
