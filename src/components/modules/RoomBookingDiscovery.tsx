@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase, type Booking, type Room } from '../../lib/supabase';
-import {
-  areAllReferenceRoomsSeeded,
-  buildReferenceRoomsView,
-} from '../../lib/roomBooking';
+import { buildReferenceRoomsView } from '../../lib/roomBooking';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import RoomAdminPanel from './RoomAdminPanel';
@@ -71,7 +68,7 @@ export default function RoomBookingDiscovery() {
 
     const resolvedDatabaseRooms = (roomResponse.data as Room[]) || [];
     const resolvedVisibleRooms = buildReferenceRoomsView(resolvedDatabaseRooms);
-    const templateOnly = !areAllReferenceRoomsSeeded(resolvedDatabaseRooms);
+    const templateOnly = false;
 
     const roomById = new Map(
       [...resolvedDatabaseRooms, ...resolvedVisibleRooms].map((room) => [room.id, room] as const)

@@ -52,30 +52,20 @@ export function normalizeRoomName(name: string) {
   return name.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
-function buildReferenceRoomTemplateId(name: string) {
-  return `template-room-${normalizeRoomName(name).replace(/[^a-z0-9]+/g, '-')}`;
-}
-
 export function buildReferenceRoomsView(existingRooms: Room[]) {
   const roomByName = new Map(
     existingRooms.map((room) => [normalizeRoomName(room.name), room] as const)
   );
+  const orderedReferenceRooms = REFERENCE_ROOMS.map((seed) =>
+    roomByName.get(normalizeRoomName(seed.name))
+  ).filter((room): room is Room => Boolean(room));
 
-  return REFERENCE_ROOMS.map((seed) => {
-    const matchedRoom = roomByName.get(normalizeRoomName(seed.name));
-    if (matchedRoom) {
-      return matchedRoom;
-    }
+  const referenceNames = new Set(REFERENCE_ROOMS.map((room) => normalizeRoomName(room.name)));
+  const customRooms = existingRooms.filter(
+    (room) => !referenceNames.has(normalizeRoomName(room.name))
+  );
 
-    return {
-      id: buildReferenceRoomTemplateId(seed.name),
-      name: seed.name,
-      capacity: seed.capacity,
-      location: seed.location,
-      amenities: seed.amenities,
-      available: true,
-    } satisfies Room;
-  });
+  return [...orderedReferenceRooms, ...customRooms];
 }
 
 export function areAllReferenceRoomsSeeded(existingRooms: Room[]) {
