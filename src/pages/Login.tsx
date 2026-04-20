@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { ArrowRight, Hexagon } from 'lucide-react';
-import MagneticButton from '../components/ui/MagneticButton';
 import { allowedGoogleDomain, supabase } from '../lib/supabase';
 import { useToastStore } from '../store/useToastStore';
 import GrainOverlay from '../components/core/GrainOverlay';
@@ -58,12 +56,7 @@ export default function Login() {
       />
 
       <div className="relative z-10 mx-auto grid min-h-[88vh] max-w-7xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-3xl"
-        >
+        <div className="max-w-3xl">
           <div className="space-y-5">
             <div className="flex items-center gap-3">
               <div
@@ -78,14 +71,9 @@ export default function Login() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="relative"
-        >
+        <div className="relative">
           <div className="rounded-[40px] border border-white/8 bg-white/[0.03] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
             <div className="overflow-hidden rounded-[34px] border border-white/8">
               <div
@@ -130,13 +118,22 @@ export default function Login() {
                 </div>
               </div>
 
-              <MagneticButton type="button" disabled={loading} size="lg" className="w-full justify-center" onClick={handleGoogleSignIn}>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleGoogleSignIn}
+                className="flex min-h-[68px] w-full items-center justify-center rounded-[22px] px-6 py-5 text-lg font-semibold text-[#1a1715] transition-colors disabled:cursor-not-allowed disabled:opacity-70"
+                style={{
+                  background: 'linear-gradient(135deg, #e6cfaa, #d49c73)',
+                  boxShadow: '0 18px 45px rgba(198,127,87,0.24)',
+                }}
+              >
                 <span className="flex items-center gap-3">
                   <GoogleMark />
                   {loading ? 'Redirecting to Google...' : 'Continue With Google'}
                   {!loading && <ArrowRight size={16} />}
                 </span>
-              </MagneticButton>
+              </button>
 
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 <div className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
@@ -150,7 +147,7 @@ export default function Login() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
