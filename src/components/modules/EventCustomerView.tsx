@@ -320,14 +320,16 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
           ) : (
             <div className="relative flex-1 min-h-0 overflow-hidden">
               <div
-                className="h-full min-h-0 overflow-y-auto space-y-3 pr-2 pb-16"
+                className="event-wallet-scroll h-full min-h-0 overflow-y-scroll space-y-3 pr-3 pb-16"
+                tabIndex={0}
+                aria-label="Your ticket wallet"
                 style={{
                   height: '100%',
                   WebkitOverflowScrolling: 'touch',
                   touchAction: 'pan-y',
                   overscrollBehavior: 'contain',
-                  scrollbarGutter: 'stable',
-                  scrollbarWidth: 'thin',
+                  scrollbarGutter: 'stable both-edges',
+                  scrollbarWidth: 'auto',
                 }}
               >
                 {wallet.map((ticket) => (

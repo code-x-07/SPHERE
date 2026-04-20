@@ -109,6 +109,29 @@ select {
   display: none;
 }
 
+.event-wallet-scroll {
+  scrollbar-color: rgba(220, 196, 163, 0.72) rgba(255, 255, 255, 0.05);
+}
+
+.event-wallet-scroll::-webkit-scrollbar {
+  width: 12px;
+}
+
+.event-wallet-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.event-wallet-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(220, 196, 163, 0.95), rgba(198, 127, 87, 0.9));
+  border-radius: 999px;
+  border: 2px solid rgba(12, 12, 13, 0.78);
+}
+
+.event-wallet-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(232, 210, 181, 1), rgba(211, 138, 98, 1));
+}
+
 ::selection {
   background: rgba(198, 127, 87, 0.32);
   color: var(--text-strong);
