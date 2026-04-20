@@ -297,10 +297,15 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
           )}
         </GlassCard>
 
-        <GlassCard className="flex h-[460px] flex-col overflow-hidden xl:h-[500px]">
-          <div className="flex items-center gap-2 mb-4">
-            <Ticket size={16} style={{ color: '#dcc4a3' }} />
-            <p className="text-white font-semibold">Your Passes</p>
+        <GlassCard className="flex h-[460px] min-h-0 flex-col overflow-hidden xl:h-[500px]">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Ticket size={16} style={{ color: '#dcc4a3' }} />
+              <p className="text-white font-semibold">Your Passes</p>
+            </div>
+            <span className="text-white/25 text-[10px] uppercase tracking-[0.22em]">
+              {wallet.length} total
+            </span>
           </div>
 
           {walletLoading ? (
@@ -315,8 +320,15 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
           ) : (
             <div className="relative flex-1 min-h-0 overflow-hidden">
               <div
-                className="h-full min-h-0 overflow-y-auto pr-2 space-y-2 overscroll-contain"
-                style={{ scrollbarGutter: 'stable', WebkitOverflowScrolling: 'touch' }}
+                className="h-full min-h-0 overflow-y-auto space-y-3 pr-2 pb-16"
+                style={{
+                  height: '100%',
+                  WebkitOverflowScrolling: 'touch',
+                  touchAction: 'pan-y',
+                  overscrollBehavior: 'contain',
+                  scrollbarGutter: 'stable',
+                  scrollbarWidth: 'thin',
+                }}
               >
                 {wallet.map((ticket) => (
                   <div
