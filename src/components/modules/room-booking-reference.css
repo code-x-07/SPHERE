@@ -217,6 +217,32 @@
   color: var(--text-primary);
 }
 
+.rb-reference-app .room-browser-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: 1.5rem;
+  align-items: end;
+  margin-bottom: 1.6rem;
+}
+
+.rb-reference-app .room-browser-kicker,
+.rb-reference-app .filters-kicker {
+  margin: 0 0 0.5rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brand-clay, var(--primary-dark));
+  opacity: 0.9;
+}
+
+.rb-reference-app .room-browser-copy,
+.rb-reference-app .filters-heading p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
 .rb-reference-app .room-filters,
 .rb-reference-app .bookings-filter,
 .rb-reference-app .add-room-card,
@@ -242,6 +268,21 @@
 
 .rb-reference-app .room-filters {
   margin-bottom: 1.5rem;
+  padding: 1.15rem 1.15rem 1rem;
+}
+
+.rb-reference-app .filters-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: 1.5rem;
+  align-items: end;
+  margin-bottom: 1.2rem;
+}
+
+.rb-reference-app .filters-heading h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--text-primary);
 }
 
 .rb-reference-app .filters-row {
@@ -414,55 +455,223 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 2rem;
+  align-items: start;
 }
 
 .rb-reference-app .room-card {
   background: var(--surface-strong);
-  border-radius: 14px;
+  border-radius: 22px;
   box-shadow: 0 20px 36px rgba(0, 0, 0, 0.24);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-color);
+  position: relative;
+  isolation: isolate;
+}
+
+.rb-reference-app .room-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04), transparent 26%),
+    radial-gradient(circle at top right, rgba(255,255,255,0.07), transparent 24%);
+  opacity: 0.8;
+}
+
+.rb-reference-app .room-card:nth-child(2n) {
+  transform: translateY(12px);
+}
+
+.rb-reference-app .room-card:nth-child(3n) {
+  transform: translateY(-8px);
 }
 
 .rb-reference-app .room-card-header {
-  padding: 1.5rem;
-  background: linear-gradient(130deg, rgba(220,196,163,0.96), rgba(142,160,125,0.94));
+  padding: 1.2rem 1.2rem 0;
+  background: transparent;
   color: #171310;
+  position: relative;
+  z-index: 1;
+}
+
+.rb-reference-app .room-card-header-top {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.rb-reference-app .room-card-kicker {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.34rem 0.62rem;
+  background: rgba(255, 248, 240, 0.07);
+  border: 1px solid rgba(255, 243, 232, 0.1);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.rb-reference-app .room-card-visual {
+  position: relative;
+  min-height: 170px;
+  border-radius: 18px;
+  padding: 1.2rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 243, 232, 0.08);
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,248,240,0.1), transparent 22%),
+    linear-gradient(145deg, rgba(255,248,240,0.06), rgba(255,248,240,0.02));
+}
+
+.rb-reference-app .room-card--sage .room-card-visual {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(142,160,125,0.22), transparent 22%),
+    linear-gradient(145deg, rgba(142,160,125,0.14), rgba(255,248,240,0.03));
+}
+
+.rb-reference-app .room-card--clay .room-card-visual {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(198,127,87,0.22), transparent 22%),
+    linear-gradient(145deg, rgba(198,127,87,0.14), rgba(255,248,240,0.03));
+}
+
+.rb-reference-app .room-card--sand .room-card-visual {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(220,196,163,0.18), transparent 22%),
+    linear-gradient(145deg, rgba(220,196,163,0.14), rgba(255,248,240,0.03));
+}
+
+.rb-reference-app .room-card--wine .room-card-visual {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(127,79,86,0.22), transparent 22%),
+    linear-gradient(145deg, rgba(127,79,86,0.16), rgba(255,248,240,0.03));
+}
+
+.rb-reference-app .room-card-orbit,
+.rb-reference-app .room-card-gridline {
+  position: absolute;
+  pointer-events: none;
+}
+
+.rb-reference-app .room-card-orbit {
+  border: 1px solid rgba(255, 243, 232, 0.12);
+  border-radius: 999px;
+}
+
+.rb-reference-app .room-card-orbit-a {
+  width: 180px;
+  height: 180px;
+  right: -48px;
+  top: -64px;
+}
+
+.rb-reference-app .room-card-orbit-b {
+  width: 120px;
+  height: 120px;
+  left: -36px;
+  bottom: -48px;
+}
+
+.rb-reference-app .room-card-gridline {
+  background: rgba(255, 243, 232, 0.08);
+}
+
+.rb-reference-app .room-card-gridline-a {
+  width: 1px;
+  height: 120px;
+  right: 28px;
+  top: 20px;
+}
+
+.rb-reference-app .room-card-gridline-b {
+  height: 1px;
+  width: 100px;
+  left: 20px;
+  bottom: 28px;
+}
+
+.rb-reference-app .room-card-title-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 72%;
 }
 
 .rb-reference-app .room-card-header h3 {
-  font-size: 1.5rem;
+  font-size: clamp(2rem, 3vw, 2.5rem);
   margin: 0;
-  flex: 1;
+  line-height: 0.95;
+  color: var(--text-primary);
 }
 
 .rb-reference-app .capacity-badge {
-  background: rgba(255, 248, 240, 0.28);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(255, 248, 240, 0.12);
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.94rem;
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 243, 232, 0.12);
+  backdrop-filter: blur(10px);
   white-space: nowrap;
-  margin-left: 1rem;
+}
+
+.rb-reference-app .room-card-title-wrap p {
+  margin: 0.55rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 .rb-reference-app .room-card-body {
-  padding: 1.5rem;
+  padding: 1.15rem 1.2rem 1.2rem;
   flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
-.rb-reference-app .room-card-body p {
-  margin-bottom: 1rem;
+.rb-reference-app .room-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.rb-reference-app .room-detail-label {
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.rb-reference-app .room-detail-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.rb-reference-app .room-detail-value.subtle {
   color: var(--text-secondary);
-  line-height: 1.6;
+  font-weight: 500;
 }
 
 .rb-reference-app .amenities {
-  margin-top: 1rem;
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 243, 232, 0.08);
 }
 
 .rb-reference-app .amenities strong,
@@ -475,15 +684,16 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 0.5rem;
+  margin-top: 0.8rem;
 }
 
 .rb-reference-app .amenity-tag {
   background: rgba(255, 248, 240, 0.07);
-  padding: 0.4rem 0.8rem;
+  padding: 0.46rem 0.82rem;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
+  border: 1px solid rgba(255, 243, 232, 0.08);
 }
 
 .rb-reference-app .room-card-button,
@@ -500,9 +710,14 @@
 }
 
 .rb-reference-app .room-card-button {
-  margin: 1rem 1.5rem 1.5rem;
-  padding: 0.75rem 1.5rem;
+  margin: 1.2rem 1.2rem 1.2rem;
+  padding: 0.95rem 1.2rem;
   font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  border-radius: 14px;
 }
 
 .rb-reference-app .no-rooms,

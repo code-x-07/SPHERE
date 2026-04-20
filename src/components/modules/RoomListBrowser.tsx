@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowUpRight, MapPin, Sparkles, Users } from 'lucide-react';
 import type { Room } from '../../lib/supabase';
 
 interface RoomListBrowserProps {
@@ -98,9 +99,40 @@ export default function RoomListBrowser({
     setShowCapacityPanel(false);
   }
 
+  function getRoomMood(room: Room) {
+    const amenities = room.amenities || [];
+
+    if (amenities.some((item) => /lab|computers/i.test(item)) || /lab/i.test(room.name)) {
+      return 'Technical setup';
+    }
+
+    if (amenities.some((item) => /projector|smartboard/i.test(item))) {
+      return 'Presentation ready';
+    }
+
+    if (room.capacity <= 10) {
+      return 'Small-group focus';
+    }
+
+    return 'Flexible campus space';
+  }
+
+  function getRoomAccent(index: number) {
+    const accents = ['sage', 'clay', 'sand', 'wine'];
+    return accents[index % accents.length];
+  }
+
   return (
     <div className="room-list-container">
-      <h2>Available Rooms</h2>
+      <div className="room-browser-header">
+        <div>
+          <p className="room-browser-kicker">BITS Goa room browser</p>
+          <h2>Available Rooms</h2>
+        </div>
+        <p className="room-browser-copy">
+          Choose a room, review its setup, and move straight into a one-hour booking slot.
+        </p>
+      </div>
 
       {templateOnly && (
         <div className="info-message">
@@ -110,6 +142,16 @@ export default function RoomListBrowser({
       )}
 
       <div className="room-filters">
+        <div className="filters-heading">
+          <div>
+            <p className="filters-kicker">Refine the list</p>
+            <h3>Find the right space quickly</h3>
+          </div>
+          <p>
+            Filter by capacity, block, and setup instead of scrolling through identical cards.
+          </p>
+        </div>
+
         <div className="filters-row">
           <div className="filter-group capacity-filter-popover" ref={capacityPanelRef}>
             <label htmlFor="room-capacity-filter">Capacity Range</label>
@@ -203,21 +245,50 @@ export default function RoomListBrowser({
       ) : (
         <>
           <div className="room-grid">
-            {filteredRooms.map((room) => (
-              <div key={room.id} className="room-card">
+            {filteredRooms.map((room, index) => (
+              <div
+                key={room.id}
+                className={`room-card room-card--${getRoomAccent(index)}`}
+              >
                 <div className="room-card-header">
-                  <h3>{room.name}</h3>
-                  <span className="capacity-badge">👥 {room.capacity}</span>
+                  <div className="room-card-header-top">
+                    <span className="room-card-kicker">Campus Room</span>
+                    <span className="capacity-badge">
+                      <Users size={14} />
+                      {room.capacity}
+                    </span>
+                  </div>
+
+                  <div className="room-card-visual">
+                    <div className="room-card-orbit room-card-orbit-a" />
+                    <div className="room-card-orbit room-card-orbit-b" />
+                    <div className="room-card-gridline room-card-gridline-a" />
+                    <div className="room-card-gridline room-card-gridline-b" />
+                    <div className="room-card-title-wrap">
+                      <h3>{room.name}</h3>
+                      <p>{getRoomMood(room)}</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="room-card-body">
-                  <p>
-                    <strong>📍 Location:</strong> {room.location || 'N/A'}
-                  </p>
+                  <div className="room-detail-row">
+                    <span className="room-detail-label">Location</span>
+                    <p className="room-detail-value">
+                      <MapPin size={14} />
+                      {room.location || 'N/A'}
+                    </p>
+                  </div>
 
                   {!!room.amenities?.length && (
                     <div className="amenities">
-                      <strong>Amenities:</strong>
+                      <div className="room-detail-row">
+                        <span className="room-detail-label">Amenities</span>
+                        <p className="room-detail-value subtle">
+                          <Sparkles size={14} />
+                          {room.amenities.length} features
+                        </p>
+                      </div>
                       <div className="amenity-tags">
                         {room.amenities.map((amenity) => (
                           <span key={amenity} className="amenity-tag">
@@ -234,7 +305,8 @@ export default function RoomListBrowser({
                   className="room-card-button"
                   onClick={() => onSelectRoom(room)}
                 >
-                  Book Room →
+                  <span>Book Room</span>
+                  <ArrowUpRight size={16} />
                 </button>
               </div>
             ))}
