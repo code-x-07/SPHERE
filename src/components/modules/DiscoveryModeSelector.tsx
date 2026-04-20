@@ -12,16 +12,16 @@ interface DiscoveryModeSelectorProps {
 const modes = [
   {
     id: 'events' as const,
-    title: 'Event Booking',
-    subtitle: 'Stay on the current discovery flow for campus events and registrations.',
-    accent: '#0ea5e9',
+    title: 'Events',
+    subtitle: 'Browse what is happening next, claim passes, and move into operator workflows when needed.',
+    accent: '#c67f57',
     icon: CalendarRange,
   },
   {
     id: 'rooms' as const,
-    title: 'Room Booking',
-    subtitle: 'Switch into the reference-style room browser, filters, timeline, and reservation flow.',
-    accent: '#10b981',
+    title: 'Rooms',
+    subtitle: 'Open the room browser for study spaces, availability, and booking requests.',
+    accent: '#8ea07d',
     icon: Building2,
   },
 ];
@@ -60,10 +60,10 @@ export default function DiscoveryModeSelector({
                   : 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
               }}
             >
-              <div className="relative overflow-hidden rounded-[28px] p-7">
-                <div
-                  className="absolute inset-0 opacity-80"
-                  style={{
+                <div className="relative overflow-hidden rounded-[28px] p-7">
+                  <div
+                    className="absolute inset-0 opacity-80"
+                    style={{
                     background: `radial-gradient(circle at top left, ${item.accent}30, transparent 30%), radial-gradient(circle at bottom right, ${item.accent}14, transparent 25%)`,
                   }}
                 />
@@ -84,7 +84,7 @@ export default function DiscoveryModeSelector({
                         className="text-[11px] font-bold uppercase tracking-[0.24em]"
                         style={{ color: isActive ? item.accent : 'rgba(255,255,255,0.35)' }}
                       >
-                        {isActive ? 'Active Workspace' : 'Workspace'}
+                        {isActive ? 'Open Now' : 'Section'}
                       </span>
                     </div>
                     <div>
@@ -95,8 +95,8 @@ export default function DiscoveryModeSelector({
                     </div>
                     <div className="flex gap-2 flex-wrap">
                       {(item.id === 'events'
-                        ? ['Admin keys', 'Live scanner', 'Wallet passes']
-                        : ['Availability timeline', 'Room browser', 'Approval flow']
+                        ? ['Pass wallet', 'Operator scan', 'Admin control']
+                        : ['Availability', 'Room browser', 'Approval flow']
                       ).map((feature) => (
                         <span
                           key={feature}

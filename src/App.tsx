@@ -43,23 +43,23 @@ function LoadingScreen() {
         transition={{ duration: 0.5 }}
         className="flex flex-col items-center gap-4"
       >
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-          className="w-16 h-16 rounded-2xl flex items-center justify-center"
-          style={{
-            background: 'linear-gradient(135deg, #0ea5e9, #0284c7)',
-            boxShadow: '0 20px 40px rgba(14,165,233,0.3)',
-          }}
-        >
-          <Hexagon size={28} className="text-white" fill="white" />
-        </motion.div>
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+        className="w-16 h-16 rounded-2xl flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(135deg, #e4c7a0, #b46f51)',
+          boxShadow: '0 20px 40px rgba(180,111,81,0.28)',
+        }}
+      >
+        <Hexagon size={28} className="text-white" fill="white" />
+      </motion.div>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: 120 }}
           transition={{ duration: 1.2, ease: 'easeInOut' }}
           className="h-0.5 rounded-full"
-          style={{ background: 'linear-gradient(90deg, #0ea5e9, #06b6d4)' }}
+          style={{ background: 'linear-gradient(90deg, #e4c7a0, #b46f51)' }}
         />
       </motion.div>
     </div>

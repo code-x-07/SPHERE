@@ -11,7 +11,7 @@ interface GlassCardProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
 export default function GlassCard({
   children,
   glow = false,
-  glowColor = 'rgba(14,165,233,0.15)',
+  glowColor = 'rgba(198,127,87,0.14)',
   padding = 'p-6',
   className = '',
   ...rest
