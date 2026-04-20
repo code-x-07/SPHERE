@@ -26,7 +26,7 @@ export default function RoomBookingsList({
     [bookings, showApprovedOnly]
   );
 
-  async function handleCancel(booking: BookingWithRoom) {
+  async function handleCancelBooking(booking: BookingWithRoom) {
     setCancellingId(booking.id);
     await onCancelBooking(booking);
     setCancellingId(null);
@@ -50,136 +50,133 @@ export default function RoomBookingsList({
 
   if (bookings.length === 0) {
     return (
-      <div className="rb-empty rb-panel">
-        <div className="rb-filter-title">You don&apos;t have any bookings yet.</div>
-        <p className="rb-muted">Browse available rooms to make your first booking.</p>
-        {onBrowseRooms && (
-          <div className="rb-actions" style={{ marginTop: '1rem' }}>
-            <button type="button" onClick={onBrowseRooms} className="rb-primary-button">
+      <div className="my-bookings-container">
+        <h2>My Bookings</h2>
+        <div className="no-bookings">
+          <p>You don&apos;t have any bookings yet.</p>
+          <p>Browse available rooms to make your first booking!</p>
+          {onBrowseRooms && (
+            <button type="button" className="clear-filters-button" onClick={onBrowseRooms}>
               Browse Rooms
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="rb-surface rb-bookings-filter">
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-          <div>
-            <div className="rb-filter-title">My Bookings</div>
-            <p className="rb-muted">
-              Showing {visibleBookings.length} booking{visibleBookings.length === 1 ? '' : 's'}
-            </p>
-          </div>
+    <div className="my-bookings-container">
+      <h2>My Bookings</h2>
 
+      <div className="bookings-filter">
+        <span className="filter-label">
+          Showing {visibleBookings.length} booking{visibleBookings.length === 1 ? '' : 's'}
+        </span>
+
+        <div className="filter-controls">
           <button
             type="button"
+            className={`approval-only-toggle ${showApprovedOnly ? 'active' : ''}`}
             onClick={() => setShowApprovedOnly((current) => !current)}
-            className={`rb-tab-button ${showApprovedOnly ? 'active' : ''}`}
           >
             {showApprovedOnly ? 'Showing Approved Only' : 'Show Approved Bookings Only'}
           </button>
         </div>
       </div>
 
-      {visibleBookings.length === 0 ? (
-        <div className="rb-empty rb-panel">
-          <div className="rb-filter-title">No approved bookings found.</div>
-          <p className="rb-muted">Turn off the filter to see all booking statuses.</p>
-          {onBrowseRooms && (
-            <div className="rb-actions" style={{ marginTop: '1rem' }}>
-              <button type="button" onClick={onBrowseRooms} className="rb-subtle-button">
-                Browse Rooms
-              </button>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="rb-bookings-list">
-          {visibleBookings.map((booking) => {
-            const range = slotToTimeRange(booking.time_slot);
-            const isUpcoming = !isPastTimeSlot(booking.date, booking.time_slot);
-            const canCancel =
-              isUpcoming && booking.status !== 'rejected' && booking.status !== 'cancelled';
+      <div className="bookings-list">
+        {visibleBookings.length === 0 && (
+          <div className="no-bookings">
+            <p>No approved bookings found.</p>
+            <p>Turn off the filter to see all booking statuses.</p>
+          </div>
+        )}
 
-            return (
-              <article key={booking.id} className="rb-booking-card">
-                <div className="rb-booking-card-header">
-                  <div className="rb-booking-title">
-                    <h3>{booking.room?.name || booking.room_id}</h3>
-                    <div className="rb-badges" style={{ marginTop: '0.6rem' }}>
-                      <span className={`rb-badge ${booking.status === 'approved' ? 'approved' : booking.status === 'pending' ? 'pending' : booking.status === 'rejected' ? 'rejected' : 'cancelled'}`}>
-                        {getApprovalStatusDisplay(booking.status)}
-                      </span>
-                      <span className={`rb-badge ${isUpcoming ? 'upcoming' : 'past'}`}>
-                        {isUpcoming ? 'Upcoming' : 'Past'}
-                      </span>
-                    </div>
+        {visibleBookings.map((booking) => {
+          const range = slotToTimeRange(booking.time_slot);
+          const upcoming = !isPastTimeSlot(booking.date, booking.time_slot);
+
+          return (
+            <div
+              key={booking.id}
+              className={`booking-item ${upcoming ? 'upcoming' : 'past'} status-${booking.status}`}
+            >
+              <div className="booking-item-header">
+                <div className="booking-title">
+                  <h3>{booking.room?.name || booking.room_id}</h3>
+                  <div className="status-badges">
+                    <span className={`status-badge ${booking.status}`}>
+                      {getApprovalStatusDisplay(booking.status)}
+                    </span>
+                    <span className={`time-status-badge ${upcoming ? 'upcoming' : 'past'}`}>
+                      {upcoming ? 'Upcoming' : 'Past'}
+                    </span>
                   </div>
+                </div>
 
-                  {canCancel && (
-                    <div>
-                      {cancelConfirmId === booking.id ? (
-                        <div className="rb-confirm">
-                          <span>Are you sure?</span>
-                          <button
-                            type="button"
-                            onClick={() => handleCancel(booking)}
-                            disabled={cancellingId === booking.id}
-                            className="rb-danger-button"
-                          >
-                            {cancellingId === booking.id ? 'Cancelling...' : 'Yes'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setCancelConfirmId(null)}
-                            disabled={cancellingId === booking.id}
-                            className="rb-subtle-button"
-                          >
-                            No
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setCancelConfirmId(booking.id)}
-                          className="rb-danger-button"
-                        >
-                          Cancel
-                        </button>
-                      )}
+                <div className="booking-actions">
+                  {upcoming &&
+                    booking.status !== 'rejected' &&
+                    booking.status !== 'cancelled' &&
+                    cancelConfirmId !== booking.id && (
+                      <button
+                        type="button"
+                        className="cancel-button"
+                        onClick={() => setCancelConfirmId(booking.id)}
+                      >
+                        Cancel
+                      </button>
+                    )}
+
+                  {cancelConfirmId === booking.id && (
+                    <div className="cancel-confirm">
+                      <p>Are you sure?</p>
+                      <button
+                        type="button"
+                        className="confirm-yes"
+                        onClick={() => handleCancelBooking(booking)}
+                        disabled={cancellingId === booking.id}
+                      >
+                        {cancellingId === booking.id ? 'Cancelling...' : 'Yes'}
+                      </button>
+                      <button
+                        type="button"
+                        className="confirm-no"
+                        onClick={() => setCancelConfirmId(null)}
+                        disabled={cancellingId === booking.id}
+                      >
+                        No
+                      </button>
                     </div>
                   )}
                 </div>
+              </div>
 
-                <div className="rb-detail-grid">
-                  <div className="rb-detail-card">
-                    <span>Location</span>
-                    <p>{booking.room?.location || 'Campus space'}</p>
-                  </div>
-                  <div className="rb-detail-card">
-                    <span>Time Slot</span>
-                    <p>
-                      {formatBookingDate(booking.date)} · {range.start} - {range.end}
-                    </p>
-                  </div>
-                  <div className="rb-detail-card">
-                    <span>Purpose</span>
-                    <p>{booking.purpose || 'Not specified'}</p>
-                  </div>
-                  <div className="rb-detail-card">
-                    <span>Booking ID</span>
-                    <p>{booking.id}</p>
-                  </div>
+              <div className="booking-details">
+                <div className="detail">
+                  <span className="label">Date:</span>
+                  <span className="value">{formatBookingDate(booking.date)}</span>
                 </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+                <div className="detail">
+                  <span className="label">Time:</span>
+                  <span className="value">
+                    {range.start} - {range.end}
+                  </span>
+                </div>
+                <div className="detail">
+                  <span className="label">Purpose:</span>
+                  <span className="value">{booking.purpose || 'Not specified'}</span>
+                </div>
+                <div className="detail">
+                  <span className="label">Booking ID:</span>
+                  <span className="value">{booking.id}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

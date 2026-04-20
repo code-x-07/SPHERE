@@ -1,3 +1,5 @@
+import type { Room } from './supabase';
+
 export const BOOKING_START_HOUR = 8;
 export const BOOKING_END_HOUR = 23;
 
@@ -45,6 +47,41 @@ export const REFERENCE_ROOMS: ReferenceRoomSeed[] = [
     amenities: ['Whiteboard'],
   },
 ];
+
+export function normalizeRoomName(name: string) {
+  return name.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function buildReferenceRoomTemplateId(name: string) {
+  return `template-room-${normalizeRoomName(name).replace(/[^a-z0-9]+/g, '-')}`;
+}
+
+export function buildReferenceRoomsView(existingRooms: Room[]) {
+  const roomByName = new Map(
+    existingRooms.map((room) => [normalizeRoomName(room.name), room] as const)
+  );
+
+  return REFERENCE_ROOMS.map((seed) => {
+    const matchedRoom = roomByName.get(normalizeRoomName(seed.name));
+    if (matchedRoom) {
+      return matchedRoom;
+    }
+
+    return {
+      id: buildReferenceRoomTemplateId(seed.name),
+      name: seed.name,
+      capacity: seed.capacity,
+      location: seed.location,
+      amenities: seed.amenities,
+      available: true,
+    } satisfies Room;
+  });
+}
+
+export function areAllReferenceRoomsSeeded(existingRooms: Room[]) {
+  const roomNames = new Set(existingRooms.map((room) => normalizeRoomName(room.name)));
+  return REFERENCE_ROOMS.every((room) => roomNames.has(normalizeRoomName(room.name)));
+}
 
 export function formatHour(hour: number) {
   return `${String(hour).padStart(2, '0')}:00`;

@@ -3,58 +3,72 @@ import { BOOKING_HOURS, buildTimeSlot, formatHour, isPastTimeSlot } from '../../
 interface RoomAvailabilityTimelineProps {
   selectedDate: string;
   bookedSlots: string[];
-  selectedSlot: string;
-  onSelectSlot: (timeSlot: string) => void;
+  selectedStartTime: string;
+  selectedEndTime: string;
+  onTimeSelect: (start: string, end: string) => void;
 }
 
 export default function RoomAvailabilityTimeline({
   selectedDate,
   bookedSlots,
-  selectedSlot,
-  onSelectSlot,
+  selectedStartTime,
+  onTimeSelect,
 }: RoomAvailabilityTimelineProps) {
   return (
-    <div>
-      <div className="rb-legend">
-        {[
-          { label: 'Available', className: '', color: 'rgba(45,212,191,0.08)' },
-          { label: 'Booked', className: '', color: 'rgba(239,68,68,0.12)' },
-          { label: 'Past', className: '', color: 'rgba(255,255,255,0.08)' },
-          { label: 'Selected', className: '', color: 'rgba(16,185,129,0.18)' },
-        ].map((item) => (
-          <span key={item.label} className="rb-legend-item">
-            <span className="rb-legend-swatch" style={{ background: item.color }} />
-            {item.label}
-          </span>
-        ))}
+    <div className="timeline-container">
+      <div className="timeline-legend">
+        <div className="legend-item">
+          <div className="legend-box available"></div>
+          <span>Available</span>
+        </div>
+        <div className="legend-item">
+          <div className="legend-box booked"></div>
+          <span>Booked</span>
+        </div>
+        <div className="legend-item">
+          <div className="legend-box past"></div>
+          <span>Past</span>
+        </div>
+        <div className="legend-item">
+          <div className="legend-box selected"></div>
+          <span>Selected</span>
+        </div>
       </div>
 
-      <div className="rb-timeline-grid">
+      <div className="timeline">
         {BOOKING_HOURS.map((hour) => {
-          const timeSlot = buildTimeSlot(hour);
-          const isBooked = bookedSlots.includes(timeSlot);
-          const isPast = isPastTimeSlot(selectedDate, timeSlot);
-          const isSelected = selectedSlot === timeSlot;
-          const isDisabled = isBooked || isPast;
+          const slot = buildTimeSlot(hour);
+          const start = formatHour(hour);
+          const end = formatHour(hour + 1);
+          const booked = bookedSlots.includes(slot);
+          const past = isPastTimeSlot(selectedDate, slot);
+          const isSelected = selectedStartTime === start;
+          const isUnavailable = booked || past;
 
           return (
-            <button
-              key={timeSlot}
-              type="button"
-              disabled={isDisabled}
-              onClick={() => onSelectSlot(timeSlot)}
-              className={`rb-slot ${isBooked ? 'booked' : ''} ${isPast ? 'past' : ''} ${isSelected ? 'selected' : ''}`}
-            >
-              <div style={{ fontWeight: 700 }}>
-                {formatHour(hour)} - {formatHour(hour + 1)}
+            <div key={slot} className="hour-block">
+              <div className="hour-label">{`${start}-${end}`}</div>
+              <div
+                className={`time-slot hour-slot ${booked ? 'booked' : 'available'} ${
+                  past ? 'past' : ''
+                } ${isSelected ? 'selected' : ''}`}
+                onClick={() => {
+                  if (!isUnavailable) {
+                    onTimeSelect(start, end);
+                  }
+                }}
+                title={`${start} to ${end}`}
+              >
+                1 hr
               </div>
-              <div className="rb-muted" style={{ marginTop: '0.35rem', fontSize: '0.8rem' }}>
-                {isBooked ? 'Already reserved' : isPast ? 'Unavailable now' : 'Open for 1 hour'}
-              </div>
-            </button>
+            </div>
           );
         })}
       </div>
+
+      <p className="timeline-hint">
+        Click an available future slot to book a fixed 1-hour session.
+      </p>
     </div>
   );
 }

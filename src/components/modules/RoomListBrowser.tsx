@@ -4,12 +4,14 @@ import type { Room } from '../../lib/supabase';
 interface RoomListBrowserProps {
   rooms: Room[];
   loading: boolean;
+  templateOnly: boolean;
   onSelectRoom: (room: Room) => void;
 }
 
 export default function RoomListBrowser({
   rooms,
   loading,
+  templateOnly,
   onSelectRoom,
 }: RoomListBrowserProps) {
   const [locationFilter, setLocationFilter] = useState('all');
@@ -80,7 +82,7 @@ export default function RoomListBrowser({
     });
   }, [rooms, minCapacity, maxCapacity, locationFilter, selectedAmenities]);
 
-  function toggleAmenity(amenity: string) {
+  function handleAmenityToggle(amenity: string) {
     setSelectedAmenities((current) =>
       current.includes(amenity)
         ? current.filter((item) => item !== amenity)
@@ -97,28 +99,38 @@ export default function RoomListBrowser({
   }
 
   return (
-    <div>
-      <div className="rb-filter-card">
-        <div className="rb-filter-title">Available Rooms</div>
+    <div className="room-list-container">
+      <h2>Available Rooms</h2>
 
-        <div className="rb-filter-grid">
-          <div className="rb-form-group rb-capacity-wrap" ref={capacityPanelRef}>
-            <label>Capacity Range</label>
+      {templateOnly && (
+        <div className="info-message">
+          Reference rooms are visible, but some are not in Supabase yet. Run the seed SQL once to
+          make every room fully bookable.
+        </div>
+      )}
+
+      <div className="room-filters">
+        <div className="filters-row">
+          <div className="filter-group capacity-filter-popover" ref={capacityPanelRef}>
+            <label htmlFor="room-capacity-filter">Capacity Range</label>
             <button
+              id="room-capacity-filter"
               type="button"
+              className="capacity-toggle-button"
+              aria-expanded={showCapacityPanel}
               onClick={() => setShowCapacityPanel((current) => !current)}
-              className="rb-capacity-toggle"
             >
               {`Capacity: ${minCapacity} - ${maxCapacity}`}
             </button>
 
             {showCapacityPanel && (
-              <div className="rb-capacity-panel">
-                <div className="rb-capacity-values">
+              <div className="capacity-dropdown-panel">
+                <div className="capacity-values">
                   <span>Min: {minCapacity}</span>
                   <span>Max: {maxCapacity}</span>
                 </div>
-                <div className="rb-slider-stack">
+
+                <div className="capacity-sliders">
                   <input
                     type="range"
                     min={capacityBounds.min}
@@ -146,12 +158,12 @@ export default function RoomListBrowser({
             )}
           </div>
 
-          <div className="rb-form-group">
-            <label>Location</label>
+          <div className="filter-group">
+            <label htmlFor="location-filter">Location</label>
             <select
+              id="location-filter"
               value={locationFilter}
               onChange={(event) => setLocationFilter(event.target.value)}
-              className="rb-select"
             >
               <option value="all">All locations</option>
               {availableLocations.map((location) => (
@@ -162,84 +174,84 @@ export default function RoomListBrowser({
             </select>
           </div>
 
-          <button type="button" onClick={clearFilters} className="rb-subtle-button">
+          <button type="button" className="clear-filters-button" onClick={clearFilters}>
             Clear Filters
           </button>
         </div>
 
         {availableAmenities.length > 0 && (
-          <div>
-            <div className="rb-field-label" style={{ marginTop: '0.95rem' }}>
-              Amenities
-            </div>
-            <div className="rb-chip-row">
-              {availableAmenities.map((amenity) => {
-                const isActive = selectedAmenities.includes(amenity);
-                return (
-                  <label key={amenity} className={`rb-chip ${isActive ? 'active' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={isActive}
-                      onChange={() => toggleAmenity(amenity)}
-                    />
-                    <span>{amenity}</span>
-                  </label>
-                );
-              })}
+          <div className="amenities-filter-group">
+            <p className="amenities-filter-title">Amenities</p>
+            <div className="amenities-filter-options">
+              {availableAmenities.map((amenity) => (
+                <label key={amenity} className="amenity-filter-option">
+                  <input
+                    type="checkbox"
+                    checked={selectedAmenities.includes(amenity)}
+                    onChange={() => handleAmenityToggle(amenity)}
+                  />
+                  <span>{amenity}</span>
+                </label>
+              ))}
             </div>
           </div>
         )}
       </div>
 
       {loading ? (
-        <div className="rb-loading-grid">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="rb-shimmer" />
-          ))}
-        </div>
-      ) : rooms.length === 0 ? (
-        <div className="rb-empty rb-panel">
-          <div className="rb-filter-title">No rooms available</div>
-        </div>
-      ) : filteredRooms.length === 0 ? (
-        <div className="rb-empty rb-panel">
-          <div className="rb-filter-title">No rooms match your selected filters</div>
-          <p className="rb-muted">Try widening the capacity range or clearing one of the filters.</p>
-        </div>
+        <div className="loading">Loading rooms...</div>
       ) : (
-        <div className="rb-room-grid">
-          {filteredRooms.map((room) => (
-            <article key={room.id} className="rb-room-card">
-              <div className="rb-room-card-header">
-                <h3>{room.name}</h3>
-                <span className="rb-room-capacity">{room.capacity} seats</span>
-              </div>
+        <>
+          <div className="room-grid">
+            {filteredRooms.map((room) => (
+              <div key={room.id} className="room-card">
+                <div className="room-card-header">
+                  <h3>{room.name}</h3>
+                  <span className="capacity-badge">👥 {room.capacity}</span>
+                </div>
 
-              <div className="rb-room-card-body">
-                <p className="rb-muted">{room.location || 'Location not listed'}</p>
+                <div className="room-card-body">
+                  <p>
+                    <strong>📍 Location:</strong> {room.location || 'N/A'}
+                  </p>
 
-                <div className="rb-meta">
-                  <strong>Amenities</strong>
-                  <div className="rb-tag-row">
-                    {(room.amenities || []).map((amenity) => (
-                      <span key={amenity} className="rb-tag">
-                        {amenity}
-                      </span>
-                    ))}
-                  </div>
+                  {!!room.amenities?.length && (
+                    <div className="amenities">
+                      <strong>Amenities:</strong>
+                      <div className="amenity-tags">
+                        {room.amenities.map((amenity) => (
+                          <span key={amenity} className="amenity-tag">
+                            {amenity}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <button
                   type="button"
+                  className="room-card-button"
                   onClick={() => onSelectRoom(room)}
-                  className="rb-primary-button"
                 >
                   Book Room →
                 </button>
               </div>
-            </article>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          {rooms.length === 0 && (
+            <div className="no-rooms">
+              <p>No rooms available</p>
+            </div>
+          )}
+
+          {rooms.length > 0 && filteredRooms.length === 0 && (
+            <div className="no-rooms">
+              <p>No rooms match your selected filters.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

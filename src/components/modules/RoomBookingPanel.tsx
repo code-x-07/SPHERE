@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { supabase, type Room } from '../../lib/supabase';
 import {
   formatBookingDate,
@@ -19,22 +18,25 @@ interface AvailabilityRow {
 
 interface RoomBookingPanelProps {
   room: Room;
+  templateOnly: boolean;
   onBack: () => void;
   onBookingSuccess: () => void;
 }
 
 export default function RoomBookingPanel({
   room,
+  templateOnly,
   onBack,
   onBookingSuccess,
 }: RoomBookingPanelProps) {
   const { profile } = useAuthStore();
   const { addToast } = useToastStore();
   const [date, setDate] = useState(getLocalDateString());
-  const [selectedSlot, setSelectedSlot] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [purpose, setPurpose] = useState('');
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
-  const [loadingAvailability, setLoadingAvailability] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -42,9 +44,13 @@ export default function RoomBookingPanel({
     let mounted = true;
 
     async function fetchAvailability() {
-      setLoadingAvailability(true);
-      setError('');
+      if (templateOnly) {
+        setBookedSlots([]);
+        setLoading(false);
+        return;
+      }
 
+      setLoading(true);
       const { data, error: rpcError } = await supabase.rpc('get_room_availability', {
         target_date: date,
         target_room_id: room.id,
@@ -53,8 +59,8 @@ export default function RoomBookingPanel({
       if (!mounted) return;
 
       if (rpcError) {
+        setError('Failed to fetch availability');
         setBookedSlots([]);
-        setError('We could not load room availability right now.');
       } else {
         const rows = ((data || []) as AvailabilityRow[]).filter(
           (entry) => entry.status === 'approved' || entry.status === 'pending'
@@ -62,7 +68,7 @@ export default function RoomBookingPanel({
         setBookedSlots(rows.map((entry) => entry.time_slot));
       }
 
-      setLoadingAvailability(false);
+      setLoading(false);
     }
 
     void fetchAvailability();
@@ -70,24 +76,35 @@ export default function RoomBookingPanel({
     return () => {
       mounted = false;
     };
-  }, [date, room.id]);
+  }, [date, room.id, templateOnly]);
 
   useEffect(() => {
     const suggestedSlot = getFirstAvailableSlot(date, bookedSlots);
-    const isCurrentSlotUnavailable =
-      !selectedSlot ||
-      bookedSlots.includes(selectedSlot) ||
-      isPastTimeSlot(date, selectedSlot);
+    const selectedSlot = startTime && endTime ? `${startTime}-${endTime}` : '';
+    const shouldResetSelection =
+      !selectedSlot || bookedSlots.includes(selectedSlot) || isPastTimeSlot(date, selectedSlot);
 
-    if (isCurrentSlotUnavailable) {
-      setSelectedSlot(suggestedSlot);
+    if (shouldResetSelection && suggestedSlot) {
+      const nextRange = slotToTimeRange(suggestedSlot);
+      setStartTime(nextRange.start);
+      setEndTime(nextRange.end);
     }
-  }, [bookedSlots, date, selectedSlot]);
+  }, [bookedSlots, date, startTime, endTime]);
 
-  const selectedRange = useMemo(() => slotToTimeRange(selectedSlot), [selectedSlot]);
+  const selectedSlot = useMemo(() => {
+    if (!startTime || !endTime) return '';
+    return `${startTime}-${endTime}`;
+  }, [startTime, endTime]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (templateOnly) {
+      setError(
+        'These reference rooms are not in Supabase yet. Run the seed SQL first, then booking will work normally.'
+      );
+      return;
+    }
 
     if (!profile) {
       setError('You need to be signed in to book a room.');
@@ -95,7 +112,7 @@ export default function RoomBookingPanel({
     }
 
     if (!selectedSlot) {
-      setError('Choose an available one-hour slot first.');
+      setError('Please choose an available one-hour slot.');
       return;
     }
 
@@ -115,7 +132,7 @@ export default function RoomBookingPanel({
 
     if (insertError) {
       if (insertError.code === '23505') {
-        setError('That slot was just taken. Pick another available hour and try again.');
+        setError('This slot is no longer available. Please choose another time.');
       } else {
         setError(insertError.message);
       }
@@ -124,8 +141,8 @@ export default function RoomBookingPanel({
 
     addToast({
       type: 'success',
-      title: 'Request submitted',
-      message: `${room.name} on ${formatBookingDate(date)} at ${selectedRange.start}`,
+      title: 'Booking request submitted',
+      message: `${room.name} · ${formatBookingDate(date)} · ${startTime}-${endTime}`,
     });
 
     setPurpose('');
@@ -133,116 +150,99 @@ export default function RoomBookingPanel({
   }
 
   return (
-    <div>
-      <button type="button" onClick={onBack} className="rb-subtle-button rb-back">
-        <ArrowLeft size={15} />
-        Back to Rooms
+    <div className="booking-form-container">
+      <button type="button" className="back-button" onClick={onBack}>
+        ← Back to Rooms
       </button>
 
-      <div className="rb-booking-layout">
-        <div className="rb-form-card">
-          <h2>Book {room.name}</h2>
-          <p className="rb-room-info">{room.location || 'Location not listed'}</p>
+      <div className="booking-form-card">
+        <h2>Book {room.name}</h2>
+        <p className="room-info">📍 {room.location || 'Location TBA'}</p>
 
-          {error && <div className="rb-alert error">{error}</div>}
+        {templateOnly && (
+          <div className="info-message">
+            Reference preview mode is active. Run the seed SQL to make this room live in
+            Supabase.
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="rb-booking-form">
-            <div className="rb-form-group">
-              <label>Select Date</label>
-              <input
-                type="date"
-                value={date}
-                min={getLocalDateString()}
-                onChange={(event) => setDate(event.target.value)}
-                className="rb-input"
+        {error && <div className="error-message">{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="room-booking-date">Select Date</label>
+            <input
+              id="room-booking-date"
+              type="date"
+              value={date}
+              min={getLocalDateString()}
+              onChange={(event) => setDate(event.target.value)}
+              required
+            />
+          </div>
+
+          <div className="timeline-section">
+            <h3>Room Availability for {date}</h3>
+            {loading ? (
+              <p className="loading-text">Loading availability...</p>
+            ) : (
+              <RoomAvailabilityTimeline
+                selectedDate={date}
+                bookedSlots={bookedSlots}
+                selectedStartTime={startTime}
+                selectedEndTime={endTime}
+                onTimeSelect={(nextStart, nextEnd) => {
+                  setStartTime(nextStart);
+                  setEndTime(nextEnd);
+                }}
               />
+            )}
+          </div>
+
+          <div className="time-inputs">
+            <div className="form-group">
+              <label htmlFor="room-start-time">Start Time</label>
+              <input id="room-start-time" type="time" value={startTime} readOnly required />
             </div>
-
-            <div className="rb-timeline-box">
-              <div className="rb-field-label" style={{ marginBottom: '0.75rem' }}>
-                Room Availability for {date}
-              </div>
-
-              {loadingAvailability ? (
-                <div className="rb-loading-grid">
-                  {Array.from({ length: 6 }).map((_, index) => (
-                    <div key={index} className="rb-shimmer" />
-                  ))}
-                </div>
-              ) : (
-                <RoomAvailabilityTimeline
-                  selectedDate={date}
-                  bookedSlots={bookedSlots}
-                  selectedSlot={selectedSlot}
-                  onSelectSlot={setSelectedSlot}
-                />
-              )}
-            </div>
-
-            <div className="rb-time-grid">
-              <div className="rb-form-group">
-                <label>Start Time</label>
-                <input type="time" value={selectedRange.start || ''} readOnly className="rb-input" />
-              </div>
-              <div className="rb-form-group">
-                <label>End Time</label>
-                <input type="time" value={selectedRange.end || ''} readOnly className="rb-input" />
-              </div>
-            </div>
-
-            <div className="rb-form-group">
-              <label>Purpose (Optional)</label>
-              <textarea
-                value={purpose}
-                onChange={(event) => setPurpose(event.target.value)}
-                rows={4}
-                placeholder="What will you use this room for?"
-                className="rb-textarea"
-              />
-            </div>
-
-            <button type="submit" disabled={submitting || !selectedSlot} className="rb-primary-button">
-              {submitting ? 'Booking...' : 'Confirm Booking'}
-            </button>
-          </form>
-        </div>
-
-        <div className="rb-summary">
-          <h3>Booking Summary</h3>
-          <p>
-            <strong>Room:</strong> {room.name}
-          </p>
-          <p>
-            <strong>Date:</strong> {formatBookingDate(date)}
-          </p>
-          <p>
-            <strong>Time:</strong>{' '}
-            {selectedRange.start && selectedRange.end
-              ? `${selectedRange.start} - ${selectedRange.end}`
-              : 'Choose a slot'}
-          </p>
-          {purpose.trim() && (
-            <p>
-              <strong>Purpose:</strong> {purpose.trim()}
-            </p>
-          )}
-
-          <div className="rb-timeline-box" style={{ marginTop: '1rem' }}>
-            <div className="rb-field-label" style={{ marginBottom: '0.5rem' }}>
-              Room Details
-            </div>
-            <p className="rb-muted">
-              <strong>Capacity:</strong> {room.capacity} seats
-            </p>
-            <div className="rb-tag-row" style={{ marginTop: '0.7rem' }}>
-              {(room.amenities || []).map((amenity) => (
-                <span key={amenity} className="rb-tag">
-                  {amenity}
-                </span>
-              ))}
+            <div className="form-group">
+              <label htmlFor="room-end-time">End Time</label>
+              <input id="room-end-time" type="time" value={endTime} readOnly required />
             </div>
           </div>
-        </div>
+
+          <div className="form-group">
+            <label htmlFor="room-booking-purpose">Purpose (Optional)</label>
+            <textarea
+              id="room-booking-purpose"
+              rows={3}
+              value={purpose}
+              onChange={(event) => setPurpose(event.target.value)}
+              placeholder="What will you use this room for?"
+            />
+          </div>
+
+          <div className="booking-summary">
+            <h3>Booking Summary</h3>
+            <p>
+              <strong>Room:</strong> {room.name}
+            </p>
+            <p>
+              <strong>Date:</strong> {formatBookingDate(date)}
+            </p>
+            <p>
+              <strong>Time:</strong> {startTime && endTime ? `${startTime} - ${endTime}` : 'Select a slot'}
+            </p>
+            {purpose.trim() && (
+              <p>
+                <strong>Purpose:</strong> {purpose.trim()}
+              </p>
+            )}
+          </div>
+
+          <button type="submit" className="submit-button" disabled={submitting || !selectedSlot}>
+            {submitting ? 'Booking...' : 'Confirm Booking'}
+          </button>
+        </form>
       </div>
     </div>
   );

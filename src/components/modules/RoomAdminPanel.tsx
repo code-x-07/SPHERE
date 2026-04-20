@@ -18,8 +18,8 @@ interface RoomAdminPanelProps {
   onRoomsChanged: () => Promise<void>;
 }
 
-type AdminTab = 'pending' | 'approved' | 'rejected';
 type AdminSection = 'approvals' | 'rooms';
+type BookingTab = 'pending' | 'approved' | 'rejected';
 
 export default function RoomAdminPanel({
   bookings,
@@ -27,8 +27,8 @@ export default function RoomAdminPanel({
   onUpdateStatus,
   onRoomsChanged,
 }: RoomAdminPanelProps) {
-  const [section, setSection] = useState<AdminSection>('approvals');
-  const [tab, setTab] = useState<AdminTab>('pending');
+  const [adminSection, setAdminSection] = useState<AdminSection>('approvals');
+  const [bookingTab, setBookingTab] = useState<BookingTab>('pending');
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const pendingBookings = useMemo(
@@ -44,139 +44,143 @@ export default function RoomAdminPanel({
     [bookings]
   );
 
-  const filteredBookings = useMemo(() => {
-    if (tab === 'approved') return approvedBookings;
-    if (tab === 'rejected') return rejectedBookings;
+  const visibleBookings = useMemo(() => {
+    if (bookingTab === 'approved') return approvedBookings;
+    if (bookingTab === 'rejected') return rejectedBookings;
     return pendingBookings;
-  }, [approvedBookings, pendingBookings, rejectedBookings, tab]);
+  }, [approvedBookings, bookingTab, pendingBookings, rejectedBookings]);
 
-  async function handleUpdate(
-    booking: BookingWithRoom,
-    status: 'approved' | 'rejected'
-  ) {
+  async function handleUpdate(booking: BookingWithRoom, status: 'approved' | 'rejected') {
     setProcessingId(booking.id);
     await onUpdateStatus(booking, status);
     setProcessingId(null);
   }
 
   return (
-    <div>
-      <div className="rb-surface rb-admin-topbar">
-        <div className="rb-section-tabs">
-          {(['approvals', 'rooms'] as AdminSection[]).map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setSection(item)}
-              className={`rb-tab-button ${section === item ? 'active' : ''}`}
-            >
-              {item === 'approvals' ? 'Booking Approvals' : 'Manage Rooms'}
-            </button>
-          ))}
-        </div>
+    <div className="admin-approval-container">
+      <div className="admin-section-tabs">
+        <button
+          type="button"
+          className={`admin-section-tab ${adminSection === 'approvals' ? 'active' : ''}`}
+          onClick={() => setAdminSection('approvals')}
+        >
+          Booking Approvals
+        </button>
+        <button
+          type="button"
+          className={`admin-section-tab ${adminSection === 'rooms' ? 'active' : ''}`}
+          onClick={() => setAdminSection('rooms')}
+        >
+          Manage Rooms
+        </button>
       </div>
 
-      {section === 'rooms' && (
-        <RoomManagementPanel rooms={rooms} onRoomsChanged={onRoomsChanged} />
-      )}
+      {adminSection === 'rooms' && <RoomManagementPanel rooms={rooms} onRoomsChanged={onRoomsChanged} />}
 
-      {section === 'approvals' && (
-        <div>
-          <div className="rb-surface rb-admin-topbar">
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-              <div>
-                <div className="rb-filter-title">Booking Approvals</div>
-                <p className="rb-muted">{pendingBookings.length} Pending</p>
-              </div>
-
-              <div className="rb-status-tabs">
-                {([
-                  { id: 'pending' as const, count: pendingBookings.length, label: 'Pending' },
-                  { id: 'approved' as const, count: approvedBookings.length, label: 'Approved' },
-                  { id: 'rejected' as const, count: rejectedBookings.length, label: 'Rejected' },
-                ]).map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setTab(item.id)}
-                    className={`rb-tab-button ${tab === item.id ? 'active' : ''}`}
-                  >
-                    {item.label} ({item.count})
-                  </button>
-                ))}
-              </div>
-            </div>
+      {adminSection === 'approvals' && (
+        <>
+          <div className="admin-header">
+            <h2>Booking Approvals</h2>
+            <span className="pending-count">{pendingBookings.length} Pending</span>
           </div>
 
-          {filteredBookings.length === 0 ? (
-            <div className="rb-empty rb-panel">
-              <div className="rb-filter-title">
-                {tab === 'pending' ? 'No pending booking requests.' : `No ${tab} bookings.`}
-              </div>
+          <div className="booking-status-tabs">
+            <button
+              type="button"
+              className={`status-tab ${bookingTab === 'pending' ? 'active' : ''}`}
+              onClick={() => setBookingTab('pending')}
+            >
+              Pending ({pendingBookings.length})
+            </button>
+            <button
+              type="button"
+              className={`status-tab ${bookingTab === 'approved' ? 'active' : ''}`}
+              onClick={() => setBookingTab('approved')}
+            >
+              Approved ({approvedBookings.length})
+            </button>
+            <button
+              type="button"
+              className={`status-tab ${bookingTab === 'rejected' ? 'active' : ''}`}
+              onClick={() => setBookingTab('rejected')}
+            >
+              Rejected ({rejectedBookings.length})
+            </button>
+          </div>
+
+          {visibleBookings.length === 0 ? (
+            <div className="no-pending-bookings">
+              <p>
+                {bookingTab === 'pending'
+                  ? 'No pending booking requests.'
+                  : `No ${bookingTab} bookings.`}
+              </p>
             </div>
           ) : (
-            <div className="rb-admin-list">
-              {filteredBookings.map((booking) => {
+            <div className="pending-bookings-list">
+              {visibleBookings.map((booking) => {
                 const range = slotToTimeRange(booking.time_slot);
 
                 return (
-                  <article key={booking.id} className="rb-admin-card">
-                    <div className="rb-admin-card-header">
-                      <div>
-                        <h3>{booking.room?.name || booking.room_id}</h3>
-                        <p className="rb-muted" style={{ marginTop: '0.35rem' }}>
-                          {booking.room?.location || 'Campus space'}
+                  <div key={booking.id} className="pending-booking-card">
+                    <div className="booking-card-left">
+                      <div className="booking-info-block">
+                        <h3 className="room-title">{booking.room?.name || booking.room_id}</h3>
+                        <p className="room-location">
+                          📍 {booking.room?.location || 'Campus space'}
                         </p>
                       </div>
 
-                      {tab === 'pending' && (
-                        <div className="rb-actions">
-                          <button
-                            type="button"
-                            onClick={() => handleUpdate(booking, 'approved')}
-                            disabled={processingId === booking.id}
-                            className="rb-success-button"
-                          >
-                            {processingId === booking.id ? 'Processing...' : 'Approve'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleUpdate(booking, 'rejected')}
-                            disabled={processingId === booking.id}
-                            className="rb-danger-button"
-                          >
-                            {processingId === booking.id ? 'Processing...' : 'Reject'}
-                          </button>
+                      <div className="booking-details-grid">
+                        <div className="detail-item">
+                          <span className="detail-label">Student Email:</span>
+                          <span className="detail-value">{booking.user_email || booking.user_id}</span>
                         </div>
-                      )}
+                        <div className="detail-item">
+                          <span className="detail-label">Time Slot:</span>
+                          <span className="detail-value">
+                            {formatBookingDate(booking.date)} · {range.start} - {range.end}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Purpose:</span>
+                          <span className="detail-value">{booking.purpose || 'Not specified'}</span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Requested:</span>
+                          <span className="detail-value">
+                            {new Date(booking.created_at).toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="rb-detail-grid">
-                      <div className="rb-detail-card">
-                        <span>Student Email</span>
-                        <p>{booking.user_email || booking.user_id}</p>
+                    {bookingTab === 'pending' && (
+                      <div className="booking-card-right">
+                        <button
+                          type="button"
+                          className="btn-approve"
+                          onClick={() => handleUpdate(booking, 'approved')}
+                          disabled={processingId === booking.id}
+                        >
+                          {processingId === booking.id ? 'Processing...' : 'Approve'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-reject"
+                          onClick={() => handleUpdate(booking, 'rejected')}
+                          disabled={processingId === booking.id}
+                        >
+                          {processingId === booking.id ? 'Processing...' : 'Reject'}
+                        </button>
                       </div>
-                      <div className="rb-detail-card">
-                        <span>Time Slot</span>
-                        <p>
-                          {formatBookingDate(booking.date)} · {range.start} - {range.end}
-                        </p>
-                      </div>
-                      <div className="rb-detail-card">
-                        <span>Purpose</span>
-                        <p>{booking.purpose || 'Not specified'}</p>
-                      </div>
-                      <div className="rb-detail-card">
-                        <span>Requested</span>
-                        <p>{new Date(booking.created_at).toLocaleString('en-IN')}</p>
-                      </div>
-                    </div>
-                  </article>
+                    )}
+                  </div>
                 );
               })}
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );

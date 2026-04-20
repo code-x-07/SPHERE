@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Building2, ClipboardList, ShieldCheck } from 'lucide-react';
 import { supabase, type Booking, type Room } from '../../lib/supabase';
-import { REFERENCE_ROOMS } from '../../lib/roomBooking';
+import {
+  REFERENCE_ROOMS,
+  areAllReferenceRoomsSeeded,
+  buildReferenceRoomsView,
+  normalizeRoomName,
+} from '../../lib/roomBooking';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import RoomAdminPanel from './RoomAdminPanel';
@@ -17,36 +21,39 @@ type BookingWithRoom = Booking & {
   user_email?: string;
 };
 
-const tabs = [
-  { id: 'rooms' as const, label: 'Browse Rooms', icon: Building2 },
-  { id: 'mybookings' as const, label: 'My Bookings', icon: ClipboardList },
-  { id: 'admin' as const, label: 'Admin Panel', icon: ShieldCheck },
+const STUDENT_TABS: Array<{ id: Exclude<RoomDiscoveryTab, 'admin'>; label: string }> = [
+  { id: 'rooms', label: 'Browse Rooms' },
+  { id: 'mybookings', label: 'My Bookings' },
 ];
+
+const ADMIN_TAB = { id: 'admin' as const, label: 'Admin Panel' };
 
 export default function RoomBookingDiscovery() {
   const { profile } = useAuthStore();
   const { addToast } = useToastStore();
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [databaseRooms, setDatabaseRooms] = useState<Room[]>([]);
+  const [visibleRooms, setVisibleRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [myBookings, setMyBookings] = useState<BookingWithRoom[]>([]);
   const [adminBookings, setAdminBookings] = useState<BookingWithRoom[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
+  const [usingTemplateRooms, setUsingTemplateRooms] = useState(false);
   const [activeTab, setActiveTab] = useState<RoomDiscoveryTab>('rooms');
 
-  const availableTabs = useMemo(
-    () => tabs.filter((tab) => (tab.id === 'admin' ? profile?.role === 'admin' : true)),
-    [profile?.role]
-  );
+  const availableTabs = useMemo(() => {
+    if (profile?.role === 'admin') {
+      return [...STUDENT_TABS, ADMIN_TAB];
+    }
+
+    return STUDENT_TABS;
+  }, [profile?.role]);
 
   async function seedReferenceRoomsIfNeeded(existingRooms: Room[]) {
     if (profile?.role !== 'admin') return false;
 
-    const existingNames = new Set(
-      existingRooms.map((room) => room.name.trim().toLowerCase())
-    );
-
+    const existingNames = new Set(existingRooms.map((room) => normalizeRoomName(room.name)));
     const missingRooms = REFERENCE_ROOMS.filter(
-      (room) => !existingNames.has(room.name.trim().toLowerCase())
+      (room) => !existingNames.has(normalizeRoomName(room.name))
     );
 
     if (missingRooms.length === 0) {
@@ -60,21 +67,22 @@ export default function RoomBookingDiscovery() {
       }))
     );
 
-    if (!error) {
+    if (error) {
       addToast({
-        type: 'success',
-        title: 'Reference rooms loaded',
-        message: `${missingRooms.length} room${missingRooms.length === 1 ? '' : 's'} added from the room-booking template.`,
+        type: 'error',
+        title: 'Reference rooms could not be added',
+        message: error.message,
       });
-      return true;
+      return false;
     }
 
     addToast({
-      type: 'error',
-      title: 'Room seeding failed',
-      message: error.message,
+      type: 'success',
+      title: 'Reference rooms loaded',
+      message: `${missingRooms.length} room${missingRooms.length === 1 ? '' : 's'} synced to Supabase.`,
     });
-    return false;
+
+    return true;
   }
 
   async function fetchRoomData() {
@@ -100,15 +108,20 @@ export default function RoomBookingDiscovery() {
       adminBookingQuery,
     ]);
 
-    let resolvedRooms = (roomResponse.data as Room[]) || [];
-    const seeded = await seedReferenceRoomsIfNeeded(resolvedRooms);
+    let resolvedDatabaseRooms = (roomResponse.data as Room[]) || [];
+    const seeded = await seedReferenceRoomsIfNeeded(resolvedDatabaseRooms);
 
     if (seeded) {
       const { data: reseededRooms } = await supabase.from('rooms').select('*').order('name');
-      resolvedRooms = (reseededRooms as Room[]) || [];
+      resolvedDatabaseRooms = (reseededRooms as Room[]) || [];
     }
 
-    const roomById = new Map(resolvedRooms.map((room) => [room.id, room]));
+    const resolvedVisibleRooms = buildReferenceRoomsView(resolvedDatabaseRooms);
+    const templateOnly = !areAllReferenceRoomsSeeded(resolvedDatabaseRooms);
+
+    const roomById = new Map(
+      [...resolvedDatabaseRooms, ...resolvedVisibleRooms].map((room) => [room.id, room] as const)
+    );
 
     const resolvedMyBookings = ((bookingResponse.data as Booking[]) || []).map((booking) => ({
       ...booking,
@@ -140,14 +153,16 @@ export default function RoomBookingDiscovery() {
       }));
     }
 
-    setRooms(resolvedRooms);
+    setDatabaseRooms(resolvedDatabaseRooms);
+    setVisibleRooms(resolvedVisibleRooms);
+    setUsingTemplateRooms(templateOnly);
     setMyBookings(resolvedMyBookings);
     setAdminBookings(resolvedAdminBookings);
     setLoadingRooms(false);
   }
 
   useEffect(() => {
-    fetchRoomData();
+    void fetchRoomData();
   }, [profile?.id, profile?.role]);
 
   useEffect(() => {
@@ -157,23 +172,26 @@ export default function RoomBookingDiscovery() {
   }, [activeTab, profile?.role]);
 
   async function cancelBooking(booking: BookingWithRoom) {
-    const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', booking.id);
+    const { error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', booking.id);
 
-    if (!error) {
+    if (error) {
       addToast({
-        type: 'success',
-        title: 'Booking cancelled',
-        message: booking.room?.name || 'Room booking cancelled',
+        type: 'error',
+        title: 'Cancellation failed',
+        message: error.message,
       });
-      await fetchRoomData();
       return;
     }
 
     addToast({
-      type: 'error',
-      title: 'Cancellation failed',
-      message: error.message,
+      type: 'success',
+      title: 'Booking cancelled',
+      message: booking.room?.name || 'Room booking cancelled',
     });
+    await fetchRoomData();
   }
 
   async function updateAdminBookingStatus(
@@ -182,64 +200,63 @@ export default function RoomBookingDiscovery() {
   ) {
     const { error } = await supabase.from('bookings').update({ status }).eq('id', booking.id);
 
-    if (!error) {
+    if (error) {
       addToast({
-        type: 'success',
-        title: status === 'approved' ? 'Booking approved' : 'Booking rejected',
-        message: booking.room?.name || booking.id,
+        type: 'error',
+        title: 'Update failed',
+        message: error.message,
       });
-      await fetchRoomData();
       return;
     }
 
     addToast({
-      type: 'error',
-      title: 'Update failed',
-      message: error.message,
+      type: 'success',
+      title: status === 'approved' ? 'Booking approved' : 'Booking rejected',
+      message: booking.room?.name || booking.id,
     });
+    await fetchRoomData();
   }
 
   return (
-    <div className="rb-shell">
-      <div className="rb-banner">
-        <div className="rb-user-card">
-          <div>
-            <div className="rb-user-name">{profile?.full_name || 'BITS Goa User'}</div>
-            <div className="rb-user-email">{profile?.email || 'goa.bits-pilani.ac.in'}</div>
+    <div className="rb-reference-app">
+      <header className="app-header">
+        <div className="header-controls">
+          <div className="user-session-card">
+            <div className="user-session-info">
+              <p className="user-name">{profile?.full_name || 'BITS Goa User'}</p>
+              <p className="user-email">{profile?.email || 'goa.bits-pilani.ac.in'}</p>
+            </div>
+            <button className="logout-button" type="button" disabled>
+              Room Booking
+            </button>
           </div>
-          <button type="button" className="rb-signout-lookalike" disabled>
-            Room Booking
+        </div>
+      </header>
+
+      <nav className="app-nav">
+        {availableTabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={`nav-button ${activeTab === tab.id ? 'active' : ''} ${
+              tab.id === 'admin' ? 'admin-button' : ''
+            }`}
+            onClick={() => {
+              setSelectedRoom(null);
+              setActiveTab(tab.id);
+            }}
+          >
+            {tab.label}
           </button>
-        </div>
-      </div>
+        ))}
+      </nav>
 
-      <div className="rb-tabs-wrap">
-        <div className="rb-nav">
-          {availableTabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => {
-                  setSelectedRoom(null);
-                  setActiveTab(tab.id);
-                }}
-                className={`rb-nav-button ${activeTab === tab.id ? 'active' : ''}`}
-              >
-                <Icon size={15} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="rb-panel">
+      <main className="app-main">
         {activeTab === 'rooms' &&
           (selectedRoom ? (
             <RoomBookingPanel
               room={selectedRoom}
+              templateOnly={usingTemplateRooms}
               onBack={() => setSelectedRoom(null)}
               onBookingSuccess={async () => {
                 setSelectedRoom(null);
@@ -248,7 +265,12 @@ export default function RoomBookingDiscovery() {
               }}
             />
           ) : (
-            <RoomListBrowser rooms={rooms} loading={loadingRooms} onSelectRoom={setSelectedRoom} />
+            <RoomListBrowser
+              rooms={visibleRooms}
+              loading={loadingRooms}
+              templateOnly={usingTemplateRooms}
+              onSelectRoom={setSelectedRoom}
+            />
           ))}
 
         {activeTab === 'mybookings' && (
@@ -262,12 +284,12 @@ export default function RoomBookingDiscovery() {
         {activeTab === 'admin' && profile?.role === 'admin' && (
           <RoomAdminPanel
             bookings={adminBookings}
-            rooms={rooms}
+            rooms={databaseRooms}
             onUpdateStatus={updateAdminBookingStatus}
             onRoomsChanged={fetchRoomData}
           />
         )}
-      </div>
+      </main>
     </div>
   );
 }

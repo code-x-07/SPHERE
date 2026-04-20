@@ -95,7 +95,7 @@ export default function RoomManagementPanel({
       return;
     }
 
-    addToast({ type: 'success', title: 'Room created' });
+    addToast({ type: 'success', title: 'Room created successfully' });
     resetForm();
     await onRoomsChanged();
   }
@@ -120,14 +120,14 @@ export default function RoomManagementPanel({
       return;
     }
 
-    addToast({ type: 'success', title: 'Room updated' });
+    addToast({ type: 'success', title: 'Room updated successfully' });
     resetForm();
     await onRoomsChanged();
   }
 
   async function deleteRoom(room: Room) {
     const confirmed = window.confirm(
-      `Delete ${room.name}? Associated bookings for this room may also be affected.`
+      `Are you sure you want to delete ${room.name}? All associated bookings may also be affected.`
     );
     if (!confirmed) return;
 
@@ -140,68 +140,64 @@ export default function RoomManagementPanel({
       return;
     }
 
-    addToast({ type: 'success', title: 'Room deleted' });
+    addToast({ type: 'success', title: 'Room deleted successfully' });
     resetForm();
     await onRoomsChanged();
   }
 
   function renderForm(mode: 'create' | 'edit', roomId?: string) {
     const title = mode === 'create' ? 'Create New Room' : 'Edit Room';
+    const submitLabel =
+      mode === 'create' ? (submitting ? 'Creating...' : 'Create Room') : submitting ? 'Saving...' : 'Save Changes';
     const action = mode === 'create' ? createRoom : () => saveRoom(roomId!);
 
     return (
-      <div className="rb-management-form rb-management-card">
-        <div className="rb-management-title">{title}</div>
+      <div className={mode === 'create' ? 'add-room-card' : 'edit-form'}>
+        <h3>{title}</h3>
 
-        <div className="rb-form-grid">
-          <div className="rb-form-group">
-            <label>Room Name</label>
-            <input
-              value={formData.name}
-              onChange={(event) => updateField('name', event.target.value)}
-              className="rb-input"
-              placeholder="Conference Room A"
-            />
-          </div>
-
-          <div className="rb-form-group">
-            <label>Capacity</label>
-            <input
-              type="number"
-              min="1"
-              value={formData.capacity}
-              onChange={(event) => updateField('capacity', event.target.value)}
-              className="rb-input"
-              placeholder="20"
-            />
-          </div>
-
-          <div className="rb-form-group full">
-            <label>Location</label>
-            <input
-              value={formData.location}
-              onChange={(event) => updateField('location', event.target.value)}
-              className="rb-input"
-              placeholder="Building A - Floor 2"
-            />
-          </div>
-
-          <div className="rb-form-group full">
-            <label>Amenities (comma-separated)</label>
-            <input
-              value={formData.amenities}
-              onChange={(event) => updateField('amenities', event.target.value)}
-              className="rb-input"
-              placeholder="Projector, Whiteboard, WiFi"
-            />
-          </div>
+        <div className="form-group">
+          <label>Room Name</label>
+          <input
+            value={formData.name}
+            onChange={(event) => updateField('name', event.target.value)}
+            placeholder="e.g., C308"
+          />
         </div>
 
-        <div className="rb-actions" style={{ marginTop: '1rem' }}>
-          <button type="button" onClick={action} disabled={submitting} className="rb-primary-button">
-            {submitting ? (mode === 'create' ? 'Creating...' : 'Saving...') : mode === 'create' ? 'Create Room' : 'Save Changes'}
+        <div className="form-group">
+          <label>Capacity</label>
+          <input
+            type="number"
+            min="1"
+            value={formData.capacity}
+            onChange={(event) => updateField('capacity', event.target.value)}
+            placeholder="e.g., 40"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Location</label>
+          <input
+            value={formData.location}
+            onChange={(event) => updateField('location', event.target.value)}
+            placeholder="e.g., B Dome C Wing"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Amenities (comma-separated)</label>
+          <input
+            value={formData.amenities}
+            onChange={(event) => updateField('amenities', event.target.value)}
+            placeholder="e.g., Projector, Whiteboard"
+          />
+        </div>
+
+        <div className="form-buttons">
+          <button type="button" className="btn-save" onClick={action} disabled={submitting}>
+            {submitLabel}
           </button>
-          <button type="button" onClick={resetForm} disabled={submitting} className="rb-subtle-button">
+          <button type="button" className="btn-cancel" onClick={resetForm} disabled={submitting}>
             Cancel
           </button>
         </div>
@@ -210,85 +206,82 @@ export default function RoomManagementPanel({
   }
 
   return (
-    <div>
-      <div className="rb-surface rb-management-topbar">
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-          <div>
-            <div className="rb-filter-title">Manage Rooms</div>
-            <p className="rb-muted">Create, edit, and remove rooms from the booking browser.</p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              hydrateForm();
-              setIsAddingRoom(true);
-              setEditingRoomId(null);
-            }}
-            className="rb-primary-button"
-          >
-            Add New Room
-          </button>
-        </div>
+    <div className="room-management-container">
+      <div className="management-header">
+        <h2>Manage Rooms</h2>
+        <button
+          type="button"
+          className="btn-add-room"
+          onClick={() => {
+            hydrateForm();
+            setIsAddingRoom(true);
+            setEditingRoomId(null);
+          }}
+          disabled={submitting}
+        >
+          Add New Room
+        </button>
       </div>
 
       {isAddingRoom && renderForm('create')}
 
       {rooms.length === 0 ? (
-        <div className="rb-empty rb-panel">
-          <div className="rb-filter-title">No rooms created yet</div>
-          <p className="rb-muted">Add your first room to populate the booking browser.</p>
+        <div className="no-rooms">
+          <p>No rooms created yet.</p>
         </div>
       ) : (
-        <div className="rb-management-grid">
+        <div className="rooms-management-grid">
           {rooms.map((room) => (
-            <article key={room.id} className="rb-management-card">
+            <div key={room.id} className="management-card">
               {editingRoomId === room.id ? (
                 renderForm('edit', room.id)
               ) : (
                 <>
-                  <div className="rb-management-card-header">
+                  <div className="room-info">
+                    <h3>{room.name}</h3>
+                    <p>
+                      <strong>Capacity:</strong> {room.capacity}
+                    </p>
+                    <p>
+                      <strong>Location:</strong> {room.location || 'Not specified'}
+                    </p>
                     <div>
-                      <h3>{room.name}</h3>
-                      <p className="rb-muted" style={{ marginTop: '0.35rem' }}>
-                        {room.location || 'Location not listed'}
-                      </p>
+                      <strong>Amenities:</strong>
+                      <div className="amenity-tags">
+                        {(room.amenities || []).map((amenity) => (
+                          <span key={amenity} className="amenity-tag">
+                            {amenity}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <span className="rb-room-capacity">{room.capacity} seats</span>
                   </div>
 
-                  <div className="rb-tag-row" style={{ marginBottom: '1rem' }}>
-                    {(room.amenities || []).map((amenity) => (
-                      <span key={amenity} className="rb-tag">
-                        {amenity}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="rb-actions">
+                  <div className="management-buttons">
                     <button
                       type="button"
+                      className="btn-edit"
                       onClick={() => {
                         hydrateForm(room);
                         setEditingRoomId(room.id);
                         setIsAddingRoom(false);
                       }}
-                      className="rb-success-button"
+                      disabled={submitting}
                     >
                       Edit
                     </button>
                     <button
                       type="button"
+                      className="btn-delete"
                       onClick={() => deleteRoom(room)}
                       disabled={submitting}
-                      className="rb-danger-button"
                     >
                       Delete
                     </button>
                   </div>
                 </>
               )}
-            </article>
+            </div>
           ))}
         </div>
       )}
