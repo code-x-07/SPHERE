@@ -81,6 +81,16 @@ export interface VolunteerApplication {
   applied_at: string;
 }
 
+export interface VolunteerGalleryPhoto {
+  id: string;
+  user_id: string;
+  title: string;
+  caption: string;
+  image_url: string;
+  storage_path: string | null;
+  created_at: string;
+}
+
 export interface EventTicket {
   id: string;
   event_id: string;

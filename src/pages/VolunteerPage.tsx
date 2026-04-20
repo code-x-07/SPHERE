@@ -8,6 +8,7 @@ import GlassCard from '../components/ui/GlassCard';
 import VolunteerForm from '../components/modules/VolunteerForm';
 import AdminKanban from '../components/modules/AdminKanban';
 import MagneticButton from '../components/ui/MagneticButton';
+import VolunteerGallerySection from '../components/modules/VolunteerGallerySection';
 import type { VolunteerEvent } from '../lib/supabase';
 
 export default function VolunteerPage() {
@@ -105,6 +106,14 @@ export default function VolunteerPage() {
               </MagneticButton>
             )}
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 22 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <VolunteerGallerySection />
         </motion.div>
 
         {volunteerEvents.length === 0 ? (
