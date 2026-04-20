@@ -97,13 +97,14 @@ export default function Dashboard({ onOpenScanner }: DashboardProps) {
         )}
 
         {discoveryMode === null && (
-          <GlassCard className="mt-2 text-center py-14" glow glowColor="rgba(198,127,87,0.2)">
+          <GlassCard className="mt-2 text-center py-14" glow glowColor="rgba(14,165,233,0.22)">
             <div className="max-w-2xl mx-auto">
               <p className="text-white text-2xl font-bold" style={{ letterSpacing: '-0.03em' }}>
-                Start with one section
+                Start with a booking type
               </p>
               <p className="text-white/45 text-sm mt-3">
-                Open Events to browse and claim passes, or Rooms to move into the room booking flow.
+                Pick Event Booking to continue through the existing discovery flow, or Room Booking
+                to open the new room browser modeled on the reference project.
               </p>
             </div>
           </GlassCard>

@@ -42,15 +42,15 @@ export default function MagneticButton({
 
   const variantStyles: Record<string, React.CSSProperties> = {
     primary: {
-      background: 'linear-gradient(135deg, #e6d3ba 0%, #c9895e 52%, #8e5b4a 100%)',
-      color: '#171313',
-      border: '1px solid rgba(255,248,240,0.24)',
-      boxShadow: '0 18px 48px rgba(201,137,94,0.22), inset 0 1px 0 rgba(255,255,255,0.28)',
+      background: 'linear-gradient(135deg, #67e8f9 0%, #38bdf8 42%, #2563eb 100%)',
+      color: '#ffffff',
+      border: '1px solid rgba(255,255,255,0.18)',
+      boxShadow: '0 18px 48px rgba(37,99,235,0.26), inset 0 1px 0 rgba(255,255,255,0.3)',
     },
     ghost: {
-      background: 'linear-gradient(180deg, rgba(255,248,240,0.07), rgba(255,248,240,0.04))',
-      color: 'rgba(245,239,230,0.92)',
-      border: '1px solid rgba(255,248,240,0.12)',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))',
+      color: 'rgba(255,255,255,0.92)',
+      border: '1px solid rgba(255,255,255,0.12)',
       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
     },
     danger: {
@@ -86,7 +86,7 @@ export default function MagneticButton({
       <span
         className="pointer-events-none absolute inset-0 opacity-60"
         style={{
-          background: 'linear-gradient(120deg, rgba(255,255,255,0.18), transparent 32%, transparent 68%, rgba(255,255,255,0.06))',
+          background: 'linear-gradient(120deg, rgba(255,255,255,0.18), transparent 32%, transparent 68%, rgba(255,255,255,0.08))',
         }}
       />
       <span className="relative z-[1]">{children}</span>
