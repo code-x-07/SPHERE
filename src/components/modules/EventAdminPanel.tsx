@@ -178,6 +178,13 @@ export default function EventAdminPanel({ onRefresh }: EventAdminPanelProps) {
   }
 
   async function handleDelete(eventId: string) {
+    const targetEvent = events.find((event) => event.id === eventId);
+    const confirmed = window.confirm(
+      `Delete ${targetEvent?.title || 'this event'}? This will remove the event, operator key, and related ticket access.`
+    );
+
+    if (!confirmed) return;
+
     const { error } = await supabase.from('events').delete().eq('id', eventId);
     if (error) {
       addToast({ type: 'error', title: 'Delete Failed', message: error.message });
@@ -298,22 +305,11 @@ export default function EventAdminPanel({ onRefresh }: EventAdminPanelProps) {
                   <p className="text-white text-lg font-semibold">{event.title}</p>
                   <p className="text-white/35 text-sm mt-1">{event.venue}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => startEdit(event)}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white/60 hover:text-white"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(event.id)}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-red-300 hover:text-red-200"
-                    style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+                <span className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-white/45"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  Your event
+                </span>
               </div>
 
               <p className="text-white/45 text-sm mt-3 line-clamp-3">{event.description}</p>
@@ -347,6 +343,25 @@ export default function EventAdminPanel({ onRefresh }: EventAdminPanelProps) {
                 <span>
                   Share the key only with gate volunteers assigned to this event.
                 </span>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button
+                  onClick={() => startEdit(event)}
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors hover:text-white"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <Pencil size={14} />
+                  Edit Event
+                </button>
+                <button
+                  onClick={() => handleDelete(event.id)}
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-red-200 transition-colors hover:text-white"
+                  style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.22)' }}
+                >
+                  <Trash2 size={14} />
+                  Delete Event
+                </button>
               </div>
             </GlassCard>
           ))}
