@@ -55,7 +55,7 @@ export default function HeroImmersive({
   }, []);
 
   return (
-    <section ref={rootRef} className="relative overflow-hidden rounded-[40px] border border-white/8 bg-white/[0.02] px-4 py-8 md:px-8 md:py-10">
+    <section ref={rootRef} className="relative overflow-hidden rounded-[40px] border border-white/8 bg-white/[0.02] px-4 py-5 md:px-8 md:py-6">
       <GrainOverlay opacity={0.22} />
       <div
         className="absolute inset-0"
@@ -65,14 +65,14 @@ export default function HeroImmersive({
         }}
       />
 
-      <div className="relative grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="relative grid items-center gap-6 lg:grid-cols-[1fr_0.92fr]">
         <div data-parallax="copy" className="relative z-10 max-w-3xl">
-          <h1 className="max-w-4xl text-6xl font-bold leading-[0.9] text-white md:text-8xl">
+          <h1 className="max-w-4xl text-5xl font-bold leading-[0.9] text-white md:text-7xl">
             BITS Goa
           </h1>
         </div>
 
-        <div data-parallax="orb" className="relative h-[460px] lg:h-[620px]">
+        <div data-parallax="orb" className="relative h-[320px] lg:h-[420px]">
           <div className="absolute inset-0 overflow-hidden rounded-[40px] border border-white/10 bg-white/[0.03] backdrop-blur-xl">
             <div
               className="absolute inset-0 scale-[1.03]"
@@ -91,10 +91,10 @@ export default function HeroImmersive({
             />
           </div>
 
-          <div className="absolute bottom-8 right-2 z-10 max-w-[260px] rounded-[30px] border border-white/12 bg-[#171314]/62 px-5 py-4 backdrop-blur-2xl">
+          <div className="absolute bottom-5 right-2 z-10 max-w-[240px] rounded-[26px] border border-white/12 bg-[#171314]/62 px-4 py-3 backdrop-blur-2xl">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#dcc4a3]/16 bg-[#dcc4a3]/10">
-                <MapPin size={16} className="text-[#e6d3ba]" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#dcc4a3]/16 bg-[#dcc4a3]/10">
+                <MapPin size={15} className="text-[#e6d3ba]" />
               </div>
               <div>
                 <p className="text-white text-sm font-semibold">BITS Pilani, Goa Campus</p>
