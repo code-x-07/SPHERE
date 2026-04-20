@@ -297,7 +297,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
           )}
         </GlassCard>
 
-        <GlassCard className="flex min-h-[420px] max-h-[460px] flex-col overflow-hidden xl:max-h-[500px]">
+        <GlassCard className="flex h-[460px] flex-col overflow-hidden xl:h-[500px]">
           <div className="flex items-center gap-2 mb-4">
             <Ticket size={16} style={{ color: '#dcc4a3' }} />
             <p className="text-white font-semibold">Your Passes</p>
@@ -313,7 +313,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
               <p className="text-white/40 text-sm mt-2">Reserve any event below and the access code will appear here instantly.</p>
             </div>
           ) : (
-            <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2">
+            <div className="flex-1 min-h-0 overflow-y-scroll pr-2 space-y-2" style={{ scrollbarGutter: 'stable' }}>
               {wallet.map((ticket) => (
                 <div
                   key={ticket.id}
@@ -379,7 +379,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
         </GlassCard>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+      <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-2">
         {events.map((event) => {
           const claim = claimedTickets.get(event.id);
           const seatsLeft = Math.max(0, event.capacity - event.registered);
@@ -387,7 +387,6 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
           const eventDate = new Date(event.event_date);
           const day = eventDate.toLocaleDateString('en-US', { day: '2-digit' });
           const month = eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-          const isOffset = Number(day) % 2 === 0;
 
           return (
             <motion.div
@@ -396,10 +395,10 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className={isOffset ? 'xl:translate-y-10' : ''}
+              className="h-full"
             >
-              <GlassCard className="overflow-hidden">
-                <div className="relative">
+              <GlassCard className="h-full overflow-hidden">
+                <div className="relative flex h-full min-h-[340px] flex-col">
                   <div className="absolute right-4 top-0 text-[86px] font-black leading-none text-white/[0.05] md:text-[110px]">
                     {day}
                   </div>
@@ -422,7 +421,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                     className="mt-4 max-w-2xl text-sm leading-6 text-white/56"
                     style={{
                       display: '-webkit-box',
-                      WebkitLineClamp: 3,
+                      WebkitLineClamp: 4,
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
                     }}
@@ -454,7 +453,7 @@ export default function EventCustomerView({ events, loading, onRefresh }: EventC
                     </div>
                   </div>
 
-                  <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                  <div className="mt-auto pt-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                     <div>
                       <p className="text-sm font-medium text-white">
                         {claim ? 'Pass already claimed' : soldOut ? 'This event is full' : 'Claim one free pass for this event'}
